@@ -1,0 +1,74 @@
+[
+  {
+    "question": "What was Northstar's revenue in 2025?",
+    "source": "sample_report.txt",
+    "chunk_ids": [0],
+    "type": "lexical"
+  },
+  {
+    "question": "What was Northstar's operating profit?",
+    "source": "sample_report.txt",
+    "chunk_ids": [0],
+    "type": "lexical"
+  },
+  {
+    "question": "What was Northstar's net debt at the end of the year?",
+    "source": "sample_report.txt",
+    "chunk_ids": [1, 2],
+    "type": "lexical"
+  },
+  {
+    "question": "What was Northstar's approximate headcount?",
+    "source": "sample_report.txt",
+    "chunk_ids": [2],
+    "type": "paraphrase"
+  },
+  {
+    "question": "How much operating cash flow did Northstar generate in 2025?",
+    "source": "cash_flow.txt",
+    "chunk_ids": [0],
+    "type": "lexical"
+  },
+  {
+    "question": "How much cash remained after investment spending?",
+    "source": "cash_flow.txt",
+    "chunk_ids": [1],
+    "type": "paraphrase"
+  },
+  {
+    "question": "How much cash and cash equivalents did the company hold at year end?",
+    "source": "cash_flow.txt",
+    "chunk_ids": [2],
+    "type": "lexical"
+  },
+  {
+    "question": "What risk comes from relying on a few large customers?",
+    "source": "risk_report.txt",
+    "chunk_ids": [0, 1],
+    "type": "paraphrase"
+  },
+  {
+    "question": "Which currencies create exchange-rate exposure?",
+    "source": "risk_report.txt",
+    "chunk_ids": [2],
+    "type": "paraphrase"
+  },
+  {
+    "question": "Is the company planning to expand its workforce?",
+    "source": "outlook.txt",
+    "chunk_ids": [1],
+    "type": "paraphrase"
+  },
+  {
+    "question": "Does management provide an exact sales forecast for 2026?",
+    "source": "outlook.txt",
+    "chunk_ids": [2],
+    "type": "paraphrase"
+  },
+  {
+    "question": "What does management expect for revenue growth in 2026?",
+    "source": "outlook.txt",
+    "chunk_ids": [0],
+    "type": "lexical"
+  }
+]

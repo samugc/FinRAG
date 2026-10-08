@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "finrag"
+version = "0.1.0"
+description = "Local RAG experiments for financial document question answering"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scikit-learn",
+    "pypdf",
+    "sentence-transformers",
+    "transformers",
+    "torch",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+finrag = "finrag.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

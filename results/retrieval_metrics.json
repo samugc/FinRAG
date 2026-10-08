@@ -1,0 +1,38 @@
+{
+  "corpus": {
+    "documents": 4,
+    "chunks": 12,
+    "questions": 12,
+    "chunk_size": 25,
+    "overlap": 5,
+    "note": "Small controlled synthetic corpus; not a representative financial benchmark."
+  },
+  "tfidf": {
+    "all": {
+      "recall_at_1": 0.833,
+      "recall_at_3": 1.0
+    },
+    "lexical": {
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0
+    },
+    "paraphrase": {
+      "recall_at_1": 0.667,
+      "recall_at_3": 1.0
+    }
+  },
+  "minilm": {
+    "all": {
+      "recall_at_1": 0.75,
+      "recall_at_3": 1.0
+    },
+    "lexical": {
+      "recall_at_1": 0.833,
+      "recall_at_3": 1.0
+    },
+    "paraphrase": {
+      "recall_at_1": 0.667,
+      "recall_at_3": 1.0
+    }
+  }
+}
