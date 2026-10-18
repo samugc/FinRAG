@@ -9,3 +9,4 @@ SESSION_HANDOFF.md
 .env.*
 dist/
 build/
+data/external/
