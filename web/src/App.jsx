@@ -214,9 +214,9 @@ export default function App() {
           ))}
           {!documents.length && !loadingSetup && <div className="doc-empty">No documents available</div>}
           <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" aria-label="Select a PDF document" className="pdf-file-input" onChange={(e) => uploadPdf(e.target.files?.[0])} />
-          <button className="upload-document" onClick={() => fileInputRef.current?.click()} disabled={uploading || working || !online}>
+          <button className="upload-document" onClick={() => fileInputRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); uploadPdf(e.dataTransfer.files?.[0]); }} disabled={uploading || working || !online} title="Click or drop a PDF file here">
             {uploading ? <LoaderCircle size={16} className="spin"/> : <Upload size={16}/>}
-            {uploading ? "Adding PDF…" : "Upload PDF"}
+            {uploading ? "Adding PDF…" : "Upload or drop PDF"}
           </button>
           {uploadMessage && <div className="upload-message" role="status">{uploadMessage}</div>}
           <div className="sidebar-note"><ShieldCheck size={17}/><div><b>Local-first research</b><span>Documents stay on your machine. No paid API required.</span></div></div>
