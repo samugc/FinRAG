@@ -37,3 +37,16 @@ def test_numeric_guard_allows_supported_number_and_nonnumeric_answer():
         text="Operating profit increased to €58 million in 2025."), score=0.82)]
     assert validate_numeric_evidence("€58 million [1]", evidence) == ("€58 million [1]", True)
     assert validate_numeric_evidence("The profit increased [1]", evidence) == ("The profit increased [1]", True)
+
+@pytest.mark.parametrize("response", [
+    "Based on the provided evidence, there is insufficient information to determine what dividend per share Northstar distributed.",
+    "I cannot determine the dividend per share from these documents.",
+    "There is not enough evidence to answer that question.",
+    "The dividend per share was not disclosed.",
+])
+def test_natural_language_abstentions_are_not_marked_supported(response):
+    assert validate_answer(response, 3) == ("INSUFFICIENT_EVIDENCE", False)
+
+
+def test_profit_58_million_remains_accepted():
+    assert validate_answer("€58 million [1]", 3) == ("€58 million [1]", True)
