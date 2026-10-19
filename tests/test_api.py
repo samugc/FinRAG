@@ -89,3 +89,19 @@ def test_documents_lists_corpus_without_leaking_content(client):
 def test_documents_missing_corpus_returns_503(tmp_path):
     client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path / "missing")))
     assert client.get("/documents").status_code == 503
+
+def test_query_scopes_document_sources(tmp_path):
+    (tmp_path / "alpha.txt").write_text("Revenue 42 euros", encoding="utf-8")
+    (tmp_path / "beta.txt").write_text("Profit 58 euros", encoding="utf-8")
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path)))
+    response = client.post(
+        "/query", json={"question": "What was revenue?", "source": "beta.txt"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["source"] == "beta.txt"
+    assert data["evidence"]
+    assert all(item["source"] == "beta.txt" for item in data["evidence"])
+    assert client.post(
+        "/query", json={"question": "Profit?", "source": "missing.txt"}
+    ).status_code == 422
