@@ -140,3 +140,44 @@ def test_pdf_upload_rejects_scanned_pdf_and_duplicate(tmp_path):
     response = client.post("/documents", files={"file": ("../escape.pdf", empty_pdf, "application/pdf")}, headers=headers)
     assert response.status_code == 422
     assert not (tmp_path.parent / "escape.pdf").exists()
+
+def test_pdf_upload_updates_searchable_library_without_restart(tmp_path):
+    from io import BytesIO
+    from pypdf import PdfWriter
+    from pypdf.generic import DictionaryObject, NameObject, DecodedStreamObject
+
+    (tmp_path / "existing.txt").write_text("Existing financial report.", encoding="utf-8")
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=500, height=500)
+    font = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/Type1"),
+        NameObject("/BaseFont"): NameObject("/Helvetica"),
+    })
+    font_ref = writer._add_object(font)
+    page[NameObject("/Resources")] = DictionaryObject({
+        NameObject("/Font"): DictionaryObject({NameObject("/F1"): font_ref}),
+    })
+    stream = DecodedStreamObject()
+    stream.set_data(b"BT /F1 12 Tf 50 400 Td (Acme operating profit was 123 million euros.) Tj ET")
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    buffer = BytesIO()
+    writer.write(buffer)
+    payload = buffer.getvalue()
+
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path), corpus_dir=tmp_path))
+    assert client.get("/health").json()["documents"] == 1
+    response = client.post("/documents", files={"file": ("annual.pdf", payload, "application/pdf")},
+                           headers={"X-FinRAG-Upload": "1"})
+    assert response.status_code == 201, response.text
+    assert response.json()["source"] == "annual.pdf"
+    assert response.json()["chunks"] > 0
+    assert client.get("/health").json()["documents"] == 2
+    assert any(d["source"] == "annual.pdf" for d in client.get("/documents").json()["documents"])
+    query = client.post("/query", json={"question": "What was Acme operating profit?", "source": "annual.pdf"})
+    assert query.status_code == 200, query.text
+    assert "123 million euros" in query.json()["answer"]
+    assert all(hit["source"] == "annual.pdf" for hit in query.json()["evidence"])
+    dupe = client.post("/documents", files={"file": ("annual.pdf", payload, "application/pdf")},
+                       headers={"X-FinRAG-Upload": "1"})
+    assert dupe.status_code == 409
