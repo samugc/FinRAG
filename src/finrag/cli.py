@@ -1,9 +1,7 @@
 import argparse
 
-from finrag.answer import extractive_answer
 from finrag.context import format_context
-from finrag.documents import chunk_corpus, load_corpus
-from finrag.sparse import SparseRetriever
+from finrag.pipeline import FinRAGPipeline
 
 
 def main():
@@ -34,49 +32,27 @@ def main():
         parser.error("question must not be empty")
 
     try:
-        documents = load_corpus(args.corpus)
-    except (OSError, UnicodeError) as exc:
-        parser.error(str(exc))
-    chunks = chunk_corpus(documents, chunk_size=25, overlap=5)
-
-    if not chunks:
-        parser.error("corpus contains no extractable text")
-
-    if args.retriever == "tfidf":
-        retriever = SparseRetriever()
-    else:
-        from finrag.dense import DenseRetriever
-
-        retriever = DenseRetriever()
-
-    retriever.fit(chunks)
-    results = retriever.search(args.question, k=args.k)
-
-    if args.generator == "qwen":
-        from finrag.generation import LocalGenerator
-
-        generator = LocalGenerator()
-        answer, sufficient = generator.answer(args.question, results)
-    else:
-        result = extractive_answer(
-            results,
+        result = FinRAGPipeline(args.corpus).query(
+            args.question,
+            retriever=args.retriever,
+            generator=args.generator,
+            k=args.k,
             min_score=args.min_score,
         )
-        answer = result.text
-        sufficient = result.sufficient_evidence
+    except (OSError, UnicodeError, ValueError) as exc:
+        parser.error(str(exc))
 
-    print(f"\nQuestion: {args.question}")
-    print(f"Retriever: {args.retriever}")
-    print(f"Generator: {args.generator}")
-
+    print(f"\nQuestion: {result.question}")
+    print(f"Retriever: {result.retriever}")
+    print(f"Generator: {result.generator}")
     print("\nAnswer\n")
-    print(answer)
+    print(result.answer)
 
-    if not sufficient:
+    if not result.sufficient_evidence:
         print("\nEvidence status: insufficient")
 
     print("\nEvidence\n")
-    print(format_context(results))
+    print(format_context(result.evidence))
 
 
 if __name__ == "__main__":
