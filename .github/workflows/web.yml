@@ -1,0 +1,40 @@
+name: Web
+
+on:
+  push:
+    paths:
+      - "web/**"
+      - ".github/workflows/web.yml"
+  pull_request:
+    paths:
+      - "web/**"
+      - ".github/workflows/web.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install web dependencies
+        working-directory: web
+        run: npm install --no-audit --no-fund
+      - name: Build web app
+        working-directory: web
+        run: npm run build
+      - name: Install Chromium for browser tests
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Run browser interaction tests
+        working-directory: web
+        run: npm run test:e2e
+      - name: Upload visual preview images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finrag-web-preview
+          path: web/preview/*.png
+          if-no-files-found: ignore
