@@ -4,7 +4,7 @@ import {
   ArrowDownRight, ArrowRight, BookOpen, Check, ChevronDown, ChevronRight,
   CircleAlert, CircleCheck, Clock3, Command, Database, FileText, Filter,
   Layers3, LoaderCircle, Menu, MessageSquareText, PanelRightClose,
-  RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, X, Columns2,
+  RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, X, Columns2, Upload,
 } from "lucide-react";
 
 const SAMPLES = [
@@ -41,6 +41,9 @@ export default function App() {
   const [mobilePanel, setMobilePanel] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+  const fileInputRef = useRef(null);
   const abortRef = useRef(null);
   const bottomRef = useRef(null);
 
@@ -107,6 +110,36 @@ export default function App() {
     } finally {
       setWorking(false);
       abortRef.current = null;
+    }
+  }
+
+  async function uploadPdf(file) {
+    if (!file || uploading) return;
+    if (!/\\.pdf$/i.test(file.name) || file.size > 25 * 1024 * 1024) {
+      setError("Choose a PDF smaller than 25 MB.");
+      return;
+    }
+    setUploading(true);
+    setUploadMessage("");
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "X-FinRAG-Upload": "1" },
+        body: form,
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Upload failed");
+      setSelectedDoc(data.source);
+      setUploadMessage("Added " + data.source + " · " + data.chunks + " chunks");
+      await refresh();
+    } catch (err) {
+      setError(err.message || "Unable to upload PDF.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -180,6 +213,12 @@ export default function App() {
             </button>
           ))}
           {!documents.length && !loadingSetup && <div className="doc-empty">No documents available</div>}
+          <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" aria-label="Select a PDF document" className="pdf-file-input" onChange={(e) => uploadPdf(e.target.files?.[0])} />
+          <button className="upload-document" onClick={() => fileInputRef.current?.click()} disabled={uploading || working || !online}>
+            {uploading ? <LoaderCircle size={16} className="spin"/> : <Upload size={16}/>}
+            {uploading ? "Adding PDF…" : "Upload PDF"}
+          </button>
+          {uploadMessage && <div className="upload-message" role="status">{uploadMessage}</div>}
           <div className="sidebar-note"><ShieldCheck size={17}/><div><b>Local-first research</b><span>Documents stay on your machine. No paid API required.</span></div></div>
         </div>
         <div className="sidebar-bottom"><span className="avatar">FR</span><div><b>FinRAG Workspace</b><span>Research environment</span></div><Settings2 size={17}/></div>
