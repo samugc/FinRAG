@@ -149,3 +149,26 @@ test("compare retrievers shows overlapping evidence without cross-method score c
   expect(requested.map(x => x.retriever).sort()).toEqual(["minilm","tfidf"]);
   expect(requested.every(x => x.generator === "extractive" && x.k === 3)).toBe(true);
 });
+
+
+test("upload PDF refreshes library and selects uploaded document", async ({ page }) => {
+  await fakeHealthyBackend(page);
+  await page.route("**/api/documents", async (route) => {
+    if (route.request().method() === "POST") {
+      expect(route.request().headers()["x-finrag-upload"]).toBe("1");
+      return route.fulfill({ status: 201, json: { source: "Annual_2025.pdf", chunks: 12 } });
+    }
+    return route.fulfill({ json: { documents: [
+      { source: "cash_flow.txt", chunks: 2 },
+      { source: "Annual_2025.pdf", chunks: 12 },
+    ] } });
+  });
+  await page.goto("/");
+  await expect(page.getByText("API connected")).toBeVisible();
+  await page.getByLabel("Select a PDF document").setInputFiles({
+    name: "Annual_2025.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 mock"),
+  });
+  await expect(page.getByRole("status")).toContainText("Added Annual_2025.pdf");
+  await expect(page.getByRole("button", { name: /Annual 2025/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Annual 2025/ })).toHaveClass(/doc-selected/);
+});
