@@ -46,3 +46,7 @@ The UI requires a running local backend; there are no mock answers or fake perfo
 ## Retrieval comparison
 
 The **Compare** action runs TF-IDF and MiniLM on the same question and document scope, displays both ranked evidence lists, and marks shared document chunks. It uses the real local retrieval API, with extractive generation so the model answers do not obscure the comparison. Shared hits are qualitative only: this is not Recall@k, MRR, or a calibrated model-score comparison. FinanceBench/RRF experiments remain separate.
+
+## Numeric hallucination guard
+
+Qwen is no longer shown retrieval similarity scores in its prompt. Generated numeric claims absent from the retrieved *document text* are rejected as `INSUFFICIENT_EVIDENCE`, catching cases such as the unsupported dividend answer `0.0920`. This is a conservative guard, **not** verified factual grounding: a number may appear in the evidence while being unrelated to the question, and reformatted or calculated figures can be rejected. The extractive baseline remains unchanged.
