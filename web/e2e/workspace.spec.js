@@ -119,3 +119,33 @@ test("disables requests when the local service is offline", async ({ page }) => 
   await page.getByLabel("Ask a financial question").fill("Revenue?");
   await expect(page.getByRole("button", { name: "Send question" })).toBeDisabled();
 });
+
+test("compare retrievers shows overlapping evidence without cross-method score claims", async ({ page }) => {
+  const requested = [];
+  await fakeHealthyBackend(page, (route) => {
+    const input = route.request().postDataJSON();
+    requested.push(input);
+    return route.fulfill({ json: {
+      question: input.question,
+      answer: "Sample text",
+      sufficient_evidence: true,
+      retriever: input.retriever,
+      generator: input.generator,
+      source: input.source,
+      evidence: [
+        {source: "cash_flow.txt", chunk_id: 0, text: "Northstar cash flows.", score: input.retriever === "tfidf" ? 0.8 : 0.6},
+        {source: "risk_report.txt", chunk_id: input.retriever === "tfidf" ? 0 : 1, text: "Other report information.", score: 0.4},
+      ],
+    }});
+  });
+  await page.goto("/");
+  await expect(page.getByText("API connected")).toBeVisible();
+  await page.getByRole("button", {name: /Compare/}).click();
+  await page.getByLabel("Question").fill("What do the reports say?");
+  await page.getByRole("button", {name: "Compare", exact: true}).click();
+  await expect(page.getByText("1 shared chunk")).toBeVisible();
+  await expect(page.locator(".compare-source")).toHaveCount(4);
+  expect(requested).toHaveLength(2);
+  expect(requested.map(x => x.retriever).sort()).toEqual(["minilm","tfidf"]);
+  expect(requested.every(x => x.generator === "extractive" && x.k === 3)).toBe(true);
+});
