@@ -18,6 +18,7 @@ class QueryRequest(BaseModel):
     generator: Literal["extractive", "qwen"] = "extractive"
     k: int = Field(default=3, ge=1, le=20, strict=True)
     min_score: float = Field(default=0.0, ge=0, le=1, allow_inf_nan=False)
+    source: str | None = Field(default=None, min_length=1, max_length=255)
 
     @field_validator("question")
     @classmethod
@@ -40,6 +41,7 @@ class QueryResponse(BaseModel):
     sufficient_evidence: bool
     retriever: str
     generator: str
+    source: str | None
     evidence: list[EvidenceItem]
 
 
@@ -115,7 +117,10 @@ def create_app(
                 generator=request.generator,
                 k=request.k,
                 min_score=request.min_score,
+                source=request.source,
             )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except (OSError, RuntimeError) as exc:
             raise HTTPException(status_code=503, detail="Query backend unavailable") from exc
 
@@ -125,6 +130,7 @@ def create_app(
             sufficient_evidence=result.sufficient_evidence,
             retriever=result.retriever,
             generator=result.generator,
+            source=result.source,
             evidence=[
                 EvidenceItem(
                     source=hit.chunk.source,
