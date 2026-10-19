@@ -181,3 +181,11 @@ def test_pdf_upload_updates_searchable_library_without_restart(tmp_path):
     dupe = client.post("/documents", files={"file": ("annual.pdf", payload, "application/pdf")},
                        headers={"X-FinRAG-Upload": "1"})
     assert dupe.status_code == 409
+
+
+def test_original_pdf_can_be_opened_only_if_registered(tmp_path):
+    (tmp_path / "report.txt").write_text("Revenue 42 euros", encoding="utf-8")
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path), corpus_dir=tmp_path))
+    assert client.get("/documents/report.txt/file").status_code == 404
+    assert client.get("/documents/missing.pdf/file").status_code == 404
+    assert client.get("/documents/..%2Fother.pdf/file").status_code == 404
