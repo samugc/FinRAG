@@ -11,6 +11,7 @@ from functools import lru_cache
 from typing import Callable, Literal
 
 from fastapi import FastAPI, File, Header, HTTPException, Response, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from finrag.pipeline import FinRAGPipeline
@@ -112,6 +113,29 @@ def create_app(
                 DocumentItem(source=source, chunks=count)
                 for source, count in sorted(counts.items())
             ]
+        )
+
+    @app.get("/documents/{source}/file")
+    def open_pdf_document(source: str):
+        # Only serve registered PDFs from the configured local corpus.
+        if Path(source).name != source or not source.lower().endswith(".pdf") or "\\\\" in source:
+            raise HTTPException(status_code=404, detail="PDF not found")
+        try:
+            pipeline = get_pipeline()
+            if source not in {document.source for document in pipeline.documents}:
+                raise HTTPException(status_code=404, detail="PDF not found")
+            root = corpus_path.resolve()
+            document_path = (root / source).resolve()
+            if not document_path.is_relative_to(root) or not document_path.is_file():
+                raise HTTPException(status_code=404, detail="PDF not found")
+        except (OSError, UnicodeError, ValueError) as exc:
+            raise HTTPException(status_code=503, detail="Corpus unavailable") from exc
+        return FileResponse(
+            document_path,
+            media_type="application/pdf",
+            filename=source,
+            content_disposition_type="inline",
+            headers={"X-Content-Type-Options": "nosniff"},
         )
 
     @app.post("/documents", response_model=DocumentItem, status_code=201)
