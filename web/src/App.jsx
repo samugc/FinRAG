@@ -130,8 +130,13 @@ export default function App() {
         headers: { "X-FinRAG-Upload": "1" },
         body: form,
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || "Upload failed");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = typeof data.detail === "string"
+          ? data.detail
+          : "Upload failed (HTTP " + response.status + ").";
+        throw new Error(message);
+      }
       setSelectedDoc(data.source);
       setUploadMessage("Added " + data.source + " · " + data.chunks + " chunks");
       await refresh();
