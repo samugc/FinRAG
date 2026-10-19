@@ -4,7 +4,7 @@ import {
   ArrowDownRight, ArrowRight, BookOpen, Check, ChevronDown, ChevronRight,
   CircleAlert, CircleCheck, Clock3, Command, Database, FileText, Filter,
   Layers3, LoaderCircle, Menu, MessageSquareText, PanelRightClose,
-  RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, X, Columns2, Upload,
+  RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, X, Columns2, Upload, ExternalLink,
 } from "lucide-react";
 
 const SAMPLES = [
@@ -213,9 +213,16 @@ export default function App() {
             <Database size={17}/><span>All documents</span>
           </button>
           {documents.map((doc) => (
-            <button className={"document-item " + (selectedDoc === doc.source ? "doc-selected" : "")} key={doc.source} onClick={() => { setSelectedDoc(doc.source); setMobilePanel(""); }}>
-              <FileText size={17}/><span title={doc.source}>{labelName(doc.source)}</span>
-            </button>
+            <div className="document-entry" key={doc.source}>
+              <button className={"document-item " + (selectedDoc === doc.source ? "doc-selected" : "")} onClick={() => { setSelectedDoc(doc.source); setMobilePanel(""); }}>
+                <FileText size={17}/><span title={doc.source}>{labelName(doc.source)}</span>
+              </button>
+              {/\\.pdf$/i.test(doc.source) && (
+                <a className="pdf-open" aria-label={"Open " + doc.source + " PDF"} title="Open original PDF" href={"/api/documents/" + encodeURIComponent(doc.source) + "/file"} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink size={15}/>
+                </a>
+              )}
+            </div>
           ))}
           {!documents.length && !loadingSetup && <div className="doc-empty">No documents available</div>}
           <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" aria-label="Select a PDF document" className="pdf-file-input" onChange={(e) => uploadPdf(e.target.files?.[0])} />
