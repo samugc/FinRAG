@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import ComparePanel from "./ComparePanel.jsx";
 import {
   ArrowDownRight, ArrowRight, BookOpen, Check, ChevronDown, ChevronRight,
   CircleAlert, CircleCheck, Clock3, Command, Database, FileText, Filter,
   Layers3, LoaderCircle, Menu, MessageSquareText, PanelRightClose,
-  RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, X,
+  RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, X, Columns2,
 } from "lucide-react";
 
 const SAMPLES = [
@@ -39,6 +40,7 @@ export default function App() {
   const [activeEvidence, setActiveEvidence] = useState(0);
   const [mobilePanel, setMobilePanel] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
   const abortRef = useRef(null);
   const bottomRef = useRef(null);
 
@@ -187,6 +189,7 @@ export default function App() {
         <header className="topbar">
           <div className="top-left"><button className="icon-button mobile-menu" aria-label="Open documents" onClick={() => setMobilePanel("documents")}><Menu size={20}/></button><span>Workspace</span><ChevronRight size={14}/><b>Research assistant</b></div>
           <div className="top-right">
+            <button className="compare-launch" onClick={() => setCompareOpen(true)} disabled={!online} title="Compare TF-IDF and MiniLM on the same question"><Columns2 size={16}/> Compare</button>
             <button className="connection" title="Retry API connection" onClick={refresh}>
               <span className={"dot " + (online ? "online" : "offline")}/>{loadingSetup ? "Checking…" : online ? "API connected" : "API offline"} <RotateCcw size={13}/>
             </button>
@@ -237,6 +240,7 @@ export default function App() {
         </div>
         <div className="evidence-footer"><CircleAlert size={16}/><span>Scores rank passages; they do not prove that an answer is correct.</span></div>
       </aside>
+      {compareOpen && <ComparePanel initialQuestion={query || [...entries].reverse().find(entry => entry.type === "question")?.text || ""} source={selectedDoc === "all" ? null : selectedDoc} topK={k} onClose={() => setCompareOpen(false)} />}
       {mobilePanel && <button className="mobile-overlay" aria-label="Close panel" onClick={() => setMobilePanel("")}/>}
     </div>
   );
