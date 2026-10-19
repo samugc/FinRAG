@@ -42,3 +42,7 @@ npm run test:e2e
 The browser tests validate UI behavior and requests but **do not test actual MiniLM or Qwen inference**. Real-model tests require the installed models and a running local backend.
 
 The UI requires a running local backend; there are no mock answers or fake performance figures. It does not upload files, write to the corpus or call hosted models. Do not publicly expose the API as-is.
+
+## Retrieval comparison
+
+The **Compare** action runs TF-IDF and MiniLM on the same question and document scope, displays both ranked evidence lists, and marks shared document chunks. It uses the real local retrieval API, with extractive generation so the model answers do not obscure the comparison. Shared hits are qualitative only: this is not Recall@k, MRR, or a calibrated model-score comparison. FinanceBench/RRF experiments remain separate.
