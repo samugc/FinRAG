@@ -55,3 +55,42 @@ def test_recall_counts_questions_not_matching_chunks():
         recall_at_k(retriever, [], 1)
     with pytest.raises(ValueError):
         recall_at_k(retriever, questions, 0)
+
+
+@pytest.mark.parametrize(
+    "questions",
+    [
+        {},
+        [],
+        [7],
+        [{"question": "", "source": "report.txt", "chunk_ids": [0]}],
+        [{"question": "Revenue?", "source": "", "chunk_ids": [0]}],
+        [{"question": "Revenue?", "source": "report.txt", "chunk_ids": []}],
+        [{"question": "Revenue?", "source": "report.txt", "chunk_ids": [True]}],
+        [{"question": "Revenue?", "source": "report.txt", "chunk_ids": [-1]}],
+        [{"question": "Revenue?", "source": "report.txt", "chunk_ids": [0, 0]}],
+    ],
+)
+def test_load_questions_rejects_invalid_annotations(tmp_path, questions):
+    import json
+    from finrag.evaluation import load_questions
+
+    path = tmp_path / "questions.json"
+    path.write_text(json.dumps(questions), encoding="utf-8")
+    with pytest.raises(ValueError):
+        load_questions(path)
+
+
+def test_load_questions_preserves_valid_annotations(tmp_path):
+    import json
+    from finrag.evaluation import load_questions
+
+    questions = [{
+        "question": "Revenue in 2025?",
+        "source": "report.txt",
+        "chunk_ids": [0, 1],
+        "type": "paraphrase",
+    }]
+    path = tmp_path / "questions.json"
+    path.write_text(json.dumps(questions), encoding="utf-8")
+    assert load_questions(path) == questions

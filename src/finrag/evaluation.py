@@ -3,8 +3,33 @@ from pathlib import Path
 
 
 def load_questions(path: str | Path) -> list[dict]:
+    """Load and validate accepted-evidence retrieval questions."""
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        questions = json.load(f)
+
+    if not isinstance(questions, list) or not questions:
+        raise ValueError("Evaluation questions must be a non-empty list")
+
+    for index, item in enumerate(questions):
+        if not isinstance(item, dict):
+            raise ValueError(f"Question {index} must be an object")
+
+        for field in ("question", "source"):
+            if not isinstance(item.get(field), str) or not item[field].strip():
+                raise ValueError(f"Question {index} needs a non-empty {field}")
+
+        ids = item.get("chunk_ids")
+        if (
+            not isinstance(ids, list)
+            or not ids
+            or any(type(chunk_id) is not int or chunk_id < 0 for chunk_id in ids)
+            or len(set(ids)) != len(ids)
+        ):
+            raise ValueError(
+                f"Question {index} needs distinct non-negative integer chunk_ids"
+            )
+
+    return questions
 
 
 def recall_at_k(

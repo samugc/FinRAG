@@ -1,16 +1,31 @@
 # FinRAG
 
-Local question answering over financial documents, with TF-IDF or MiniLM retrieval and an extractive baseline or local Qwen generation.
+Local question answering over financial documents with **TF-IDF or MiniLM retrieval**, source-aware context construction and either an extractive baseline or local **Qwen** generation.
 
-**The included data is small, synthetic and controlled: 4 documents, 12 chunks, 12 answerable questions and 6 unanswerable questions. It is not a representative financial QA benchmark.**
+The project keeps retrieval, context construction and generation separate so each stage can be evaluated independently. No paid API or API key is required.
 
-The Python pipeline implements document loading, word-based chunking with overlap, source metadata, cosine ranking, context construction and retrieval evaluation without a RAG framework. It uses scikit-learn for TF-IDF, Sentence Transformers for pretrained MiniLM embeddings and Transformers for Qwen inference; the models are not trained here.
+## Results at a glance
+
+The included evaluation corpus is intentionally small and controlled: **4 documents, 12 chunks, 12 answerable questions and 6 unanswerable questions**. It is useful for testing the pipeline, not as a representative financial QA benchmark.
+
+| Retriever | Recall@1 | Recall@3 |
+| --- | ---: | ---: |
+| TF-IDF | **0.833** | **1.000** |
+| MiniLM | 0.750 | **1.000** |
+
+TF-IDF ranks better on this corpus, while both retrievers recover accepted evidence within the top 3 for every answerable question. With only 12 answerable questions, this does not establish a general advantage of sparse over dense retrieval.
+
+A second check shows why retrieval score alone is not enough for answerability: the top-1 similarity ranges for answerable and unanswerable questions overlap for both retrievers, so no single score threshold cleanly separates the two.
+
+## Pipeline
 
 ```text
 TXT / Markdown / PDF → 25-word chunks, 5-word overlap
                     → TF-IDF or MiniLM → cosine ranking → top-k chunks
                     → context with sources → extractive answer or local Qwen
 ```
+
+The Python pipeline implements document loading, word-based chunking with overlap, source metadata, cosine ranking, context construction and retrieval evaluation without a RAG framework. It uses scikit-learn for TF-IDF, Sentence Transformers for pretrained MiniLM embeddings and Transformers for Qwen inference; the models are not trained here.
 
 Sparse retrieval computes cosine similarity over TF-IDF vectors. Dense retrieval uses `sentence-transformers/all-MiniLM-L6-v2`; normalized embeddings make their dot product equal to cosine similarity. Each result retains its filename, chunk id and score. Retrieval, context formatting and generation remain separate modules.
 
