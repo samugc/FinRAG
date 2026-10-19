@@ -31,3 +31,10 @@ jobs:
       - name: Run browser interaction tests
         working-directory: web
         run: npm run test:e2e
+      - name: Upload visual preview images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finrag-web-preview
+          path: web/preview/*.png
+          if-no-files-found: ignore
