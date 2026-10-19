@@ -3,6 +3,21 @@ import re
 from finrag.retrieval import SearchResult
 
 
+# Models sometimes refuse in ordinary prose instead of the requested sentinel.
+# Recognizing a few explicit uncertainty phrases prevents false "sufficient"
+# labels. This is conservative pattern matching, not answer verification.
+_ABSTENTION_LANGUAGE = re.compile(
+    r"\b(?:"
+    r"insufficient (?:information|evidence|data)"
+    r"|not enough (?:information|evidence|data)"
+    r"|(?:cannot|can't|unable to) (?:accurately |reliably )?"
+    r"(?:determine|calculate|ascertain|answer|provide)"
+    r"|(?:is|was) not (?:provided|disclosed|reported|specified|mentioned)"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
 def validate_answer(answer: str, evidence_count: int) -> tuple[str, bool]:
     answer = answer.strip()
     citations = re.findall(r"\[(\d+)\]", answer)
@@ -11,6 +26,7 @@ def validate_answer(answer: str, evidence_count: int) -> tuple[str, bool]:
         not evidence_count
         or not any(char.isalnum() for char in content)
         or re.fullmatch(r"INSUFFICIENT_EVIDENCE[.!]?", answer, re.IGNORECASE)
+        or _ABSTENTION_LANGUAGE.search(content)
         or any(not 1 <= int(citation) <= evidence_count for citation in citations)
     ):
         return "INSUFFICIENT_EVIDENCE", False
