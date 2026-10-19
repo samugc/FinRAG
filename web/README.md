@@ -31,4 +31,14 @@ Selecting a document in the left panel now **restricts retrieval to that documen
 
 **Important:** Source similarity scores and the `sufficient_evidence` field do not establish factual support. The interface intentionally labels this limitation. The model may still hallucinate; verify all answers against the excerpts.
 
+For browser interaction tests (mocked HTTP transport, real React application):
+
+```bash
+cd web
+npx playwright install chromium
+npm run test:e2e
+```
+
+The browser tests validate UI behavior and requests but **do not test actual MiniLM or Qwen inference**. Real-model tests require the installed models and a running local backend.
+
 The UI requires a running local backend; there are no mock answers or fake performance figures. It does not upload files, write to the corpus or call hosted models. Do not publicly expose the API as-is.
