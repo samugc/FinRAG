@@ -27,7 +27,7 @@ Open **http://127.0.0.1:5173**. Vite proxies `/api/*` to FastAPI at `127.0.0.1:8
 - `GET /documents`: document names and chunk counts; not full text
 - `POST /query`: query, retriever, generator and top-k; answer with ranked evidence
 
-The file list in the left panel is **for browsing/filtering the displayed sources**. Selecting a file does not restrict retrieval to that document, because the API currently searches the whole corpus. Only `tfidf` and `minilm` are implemented. RRF is not available yet. `qwen` may need model downloads and can be slow on first use.
+Selecting a document in the left panel now **restricts retrieval to that document** through the API's optional `source` field. The document-specific retriever is fitted on first use and cached separately. Returning to All documents uses the original corpus-wide retriever. Only `tfidf` and `minilm` are implemented. RRF is not available yet. `qwen` may need model downloads and can be slow on first use.
 
 **Important:** Source similarity scores and the `sufficient_evidence` field do not establish factual support. The interface intentionally labels this limitation. The model may still hallucinate; verify all answers against the excerpts.
 
