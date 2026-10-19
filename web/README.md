@@ -50,3 +50,7 @@ The **Compare** action runs TF-IDF and MiniLM on the same question and document 
 ## Numeric hallucination guard
 
 Qwen is no longer shown retrieval similarity scores in its prompt. Generated numeric claims absent from the retrieved *document text* are rejected as `INSUFFICIENT_EVIDENCE`, catching cases such as the unsupported dividend answer `0.0920`. This is a conservative guard, **not** verified factual grounding: a number may appear in the evidence while being unrelated to the question, and reformatted or calculated figures can be rejected. The extractive baseline remains unchanged.
+
+## Uploading PDF reports
+
+Use **Upload PDF** in the left sidebar to add a text-based PDF (max 25 MB, 500 pages) to the local document corpus. Newly uploaded files appear immediately in the library and can be queried without restarting the backend. Uploads are stored in `FINRAG_CORPUS` (defaults to `data/raw`) and PDF uploads to the default directory are gitignored. Existing files are never overwritten; password-protected and image-only scans are rejected. This is a local-only feature: **do not expose the API publicly**. PDF text extraction is basic (no OCR or layout-aware parsing) and may perform poorly on tables or complex layouts.
