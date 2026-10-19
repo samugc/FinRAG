@@ -172,3 +172,47 @@ test("upload PDF refreshes library and selects uploaded document", async ({ page
   await expect(page.getByRole("button", { name: /Annual 2025/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Annual 2025/ })).toHaveClass(/doc-selected/);
 });
+
+
+test("uploaded PDF is used as the query scope", async ({ page }) => {
+  let sent = null;
+  await fakeHealthyBackend(page, route => {
+    sent = route.request().postDataJSON();
+    return route.fulfill({ json: {
+      question: sent.question, answer: "Acme profit was 123 million euros.",
+      sufficient_evidence: true, retriever: sent.retriever, generator: sent.generator,
+      source: sent.source, evidence: [{source:"annual.pdf",chunk_id:0,
+        text:"Acme profit was 123 million euros.",score:0.9}],
+    }});
+  });
+  await page.route("**/api/documents", async route => {
+    if (route.request().method() === "POST")
+      return route.fulfill({status:201,json:{source:"annual.pdf",chunks:1}});
+    return route.fulfill({json:{documents:[{source:"annual.pdf",chunks:1}]}});
+  });
+  await page.goto("/");
+  await expect(page.getByText("API connected")).toBeVisible();
+  await page.getByLabel("Select a PDF document").setInputFiles({
+    name:"annual.pdf", mimeType:"application/pdf", buffer:Buffer.from("%PDF-1.4 test")
+  });
+  await expect(page.getByRole("status")).toContainText("Added annual.pdf");
+  await page.getByLabel("Ask a financial question").fill("What was Acme profit?");
+  await page.getByRole("button",{name:"Send question"}).click();
+  await expect(page.locator(".answer-text")).toContainText("123 million");
+  expect(sent.source).toBe("annual.pdf");
+});
+
+test("upload API rejection shows a readable error", async ({ page }) => {
+  await fakeHealthyBackend(page);
+  await page.route("**/api/documents", async route => {
+    if(route.request().method()==="POST")
+      return route.fulfill({status:422,json:{detail:"No selectable text found; scanned PDFs need OCR"}});
+    return route.fulfill({json:{documents:[{source:"cash_flow.txt",chunks:2}]}});
+  });
+  await page.goto("/");
+  await expect(page.getByText("API connected")).toBeVisible();
+  await page.getByLabel("Select a PDF document").setInputFiles({
+    name:"scanned.pdf",mimeType:"application/pdf",buffer:Buffer.from("%PDF-1.4 test")
+  });
+  await expect(page.locator(".global-error")).toContainText("scanned PDFs need OCR");
+});
