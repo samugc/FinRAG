@@ -115,7 +115,7 @@ export default function App() {
 
   async function uploadPdf(file) {
     if (!file || uploading) return;
-    if (!/\\.pdf$/i.test(file.name) || file.size > 25 * 1024 * 1024) {
+    if (!/\.pdf$/i.test(file.name) || file.size > 25 * 1024 * 1024) {
       setError("Choose a PDF smaller than 25 MB.");
       return;
     }
