@@ -105,3 +105,38 @@ def test_query_scopes_document_sources(tmp_path):
     assert client.post(
         "/query", json={"question": "Profit?", "source": "missing.txt"}
     ).status_code == 422
+
+
+def _make_pdf(text: str) -> bytes:
+    from io import BytesIO
+    from pypdf import PdfWriter
+    # Blank PDFs have no extractable text, so this helper tests validation.
+    stream = BytesIO()
+    writer = PdfWriter()
+    writer.add_blank_page(width=300, height=300)
+    writer.write(stream)
+    return stream.getvalue()
+
+
+def test_pdf_upload_rejects_invalid_files_and_requires_header(tmp_path):
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path), corpus_dir=tmp_path))
+    body = {"file": ("example.pdf", b"not-a-pdf", "application/pdf")}
+    assert client.post("/documents", files=body).status_code == 403
+    assert client.post("/documents", files=body, headers={"X-FinRAG-Upload": "1"}).status_code == 422
+    assert not (tmp_path / "example.pdf").exists()
+
+
+def test_pdf_upload_rejects_scanned_pdf_and_duplicate(tmp_path):
+    (tmp_path / "report.txt").write_text("Profit 58 million euros", encoding="utf-8")
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path), corpus_dir=tmp_path))
+    headers = {"X-FinRAG-Upload": "1"}
+    empty_pdf = _make_pdf("")
+    response = client.post("/documents", files={"file": ("scan.pdf", empty_pdf, "application/pdf")}, headers=headers)
+    assert response.status_code == 422
+    assert "No selectable text" in response.json()["detail"]
+    assert not (tmp_path / "scan.pdf").exists()
+    response = client.post("/documents", files={"file": ("report.txt", empty_pdf, "application/pdf")}, headers=headers)
+    assert response.status_code == 422
+    response = client.post("/documents", files={"file": ("../escape.pdf", empty_pdf, "application/pdf")}, headers=headers)
+    assert response.status_code == 422
+    assert not (tmp_path.parent / "escape.pdf").exists()
