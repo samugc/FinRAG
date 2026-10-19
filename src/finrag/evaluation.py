@@ -58,3 +58,41 @@ def recall_at_k(
             hits += 1
 
     return hits / len(questions)
+
+def rank_pages(results) -> list[int]:
+    """Rank distinct pages by their highest-scoring chunk."""
+    return list(dict.fromkeys(
+        int(hit.chunk.source.rsplit(":p", 1)[1])
+        for hit in results
+    ))
+
+
+def first_evidence_rank(
+    ranked_pages: list[int],
+    gold_pages: list[int],
+) -> int | None:
+    """Return the 1-based rank of the first annotated evidence page."""
+    gold = set(gold_pages)
+
+    return next(
+        (i for i, page in enumerate(ranked_pages, start=1) if page in gold),
+        None,
+    )
+
+def all_evidence_rank(
+    ranked_pages: list[int],
+    gold_pages: list[int],
+) -> int | None:
+    """Rank at which all required evidence pages have appeared."""
+    if not gold_pages:
+        raise ValueError("gold_pages cannot be empty")
+
+    positions = {
+        page: i
+        for i, page in enumerate(ranked_pages, start=1)
+    }
+
+    if not all(page in positions for page in gold_pages):
+        return None
+
+    return max(positions[page] for page in gold_pages)

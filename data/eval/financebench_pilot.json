@@ -1,0 +1,244 @@
+{
+  "dataset": "FinanceBench public annotations",
+  "purpose": "Fixed development pilot; not a representative test set",
+  "source": "https://github.com/patronus-ai/financebench",
+  "documents": [
+    "3M_2018_10K",
+    "PEPSICO_2022_10K",
+    "AMD_2022_10K",
+    "BOEING_2022_10K",
+    "ULTABEAUTY_2023Q4_EARNINGS",
+    "3M_2023Q2_10Q"
+  ],
+  "questions": [
+    {
+      "financebench_id": "financebench_id_03029",
+      "doc_name": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "gold_pages": [
+        59
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_04672",
+      "doc_name": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "gold_pages": [
+        57
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00735",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        25
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_01009",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        3,
+        4
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_01328",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        77
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_03620",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "gold_pages": [
+        61,
+        63
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_04481",
+      "doc_name": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "gold_pages": [
+        61,
+        63
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00222",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        55
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00563",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        47
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00757",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        11
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00917",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        42
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00995",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        3
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_01198",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        42
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_01279",
+      "doc_name": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        57
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00464",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        7
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00494",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        8
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00517",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        61
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00585",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        54
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00678",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        54
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_01091",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        112
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_01290",
+      "doc_name": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        7,
+        9,
+        13
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00601",
+      "doc_name": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        1
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00603",
+      "doc_name": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        2
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00605",
+      "doc_name": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        2
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00606",
+      "doc_name": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        1
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00807",
+      "doc_name": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        4
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_00941",
+      "doc_name": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "gold_pages": [
+        0
+      ]
+    },
+    {
+      "financebench_id": "financebench_id_01858",
+      "doc_name": "3M_2023Q2_10Q",
+      "question_type": "novel-generated",
+      "gold_pages": [
+        61
+      ]
+    }
+  ]
+}

@@ -127,3 +127,29 @@ python scripts/plot_amd.py
 The scripts generate JSON metrics and figures in `results/`.
 
 FinanceBench annotations: https://github.com/patronus-ai/financebench
+## FinanceBench: multi-document development pilot
+
+We evaluated TF-IDF and MiniLM on 28 FinanceBench questions from six financial reports (7,540 chunks). Retrieval is restricted to the report associated with each question, using 80-word chunks with 15-word overlap.
+
+| Method | Any-evidence Hit@5 | All-evidence Hit@5 |
+| --- | ---: | ---: |
+| TF-IDF | 39.3% | 32.1% |
+| MiniLM | 53.6% | 46.4% |
+
+Any-evidence Hit@k requires at least one annotated evidence page within the top k distinct pages. All-evidence Hit@k requires every annotated page within the top k.
+
+Four questions require multiple evidence pages. MiniLM performs better overall, but TF-IDF performs better on some individual reports.
+
+These are exploratory development results, not held-out benchmark results. Page-level evidence retrieval does not establish answer correctness.
+
+One of 7,540 chunks exceeds MiniLM's 256-token limit (264 tokens, Boeing page 48). It is not on an annotated evidence page, but truncation may still affect rankings. Word-based chunking and PDF table extraction remain limitations.
+
+### Reproduction
+
+Download the six matching PDFs and the public FinanceBench annotations from https://github.com/patronus-ai/financebench.
+
+```bash
+PYTHONPATH=src python scripts/prepare_financebench.py
+PYTHONPATH=src python scripts/evaluate_financebench_pilot.py
+
+```
