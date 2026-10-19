@@ -9,3 +9,6 @@ SESSION_HANDOFF.md
 .env.*
 dist/
 build/
+
+# Personal PDFs added through the local web interface
+data/raw/*.pdf
