@@ -23,6 +23,7 @@ class QueryResult:
     sufficient_evidence: bool
     retriever: str
     generator: str
+    source: str | None
     evidence: list[SearchResult]
 
 
@@ -38,9 +39,10 @@ class FinRAGPipeline:
         self._initialization_lock = Lock()
         self._generation_lock = Lock()
 
-    def _retriever(self, name: str):
+    def _retriever(self, name: str, source: str | None = None):
+        key = name if source is None else (name, source)
         with self._initialization_lock:
-            if name not in self._retrievers:
+            if key not in self._retrievers:
                 if name == "tfidf":
                     retriever = SparseRetriever()
                 elif name == "minilm":
@@ -48,9 +50,12 @@ class FinRAGPipeline:
                     retriever = DenseRetriever()
                 else:
                     raise ValueError(f"Unknown retriever: {name}")
-                retriever.fit(self.chunks)
-                self._retrievers[name] = retriever
-            return self._retrievers[name]
+                chunks = self.chunks if source is None else [
+                    chunk for chunk in self.chunks if chunk.source == source
+                ]
+                retriever.fit(chunks)
+                self._retrievers[key] = retriever
+            return self._retrievers[key]
 
     def _local_generator(self):
         with self._initialization_lock:
@@ -67,6 +72,7 @@ class FinRAGPipeline:
         generator: str = "extractive",
         k: int = 3,
         min_score: float = 0.0,
+        source: str | None = None,
     ) -> QueryResult:
         if not isinstance(question, str) or not question.strip():
             raise ValueError("Question must not be empty")
@@ -79,7 +85,15 @@ class FinRAGPipeline:
         if not isfinite(min_score) or not 0 <= min_score <= 1:
             raise ValueError("min_score must be between 0 and 1")
 
-        evidence = self._retriever(retriever).search(question, k=k)
+        if source is not None:
+            if not isinstance(source, str) or source not in {
+                doc.source for doc in self.documents
+            }:
+                raise ValueError("Unknown document source")
+            if not any(chunk.source == source for chunk in self.chunks):
+                raise ValueError("Selected document contains no extractable text")
+
+        evidence = self._retriever(retriever, source).search(question, k=k)
         if generator == "extractive":
             result = extractive_answer(evidence, min_score=min_score)
             answer, sufficient = result.text, result.sufficient_evidence
@@ -94,5 +108,6 @@ class FinRAGPipeline:
             sufficient_evidence=sufficient,
             retriever=retriever,
             generator=generator,
+            source=source,
             evidence=evidence,
         )
