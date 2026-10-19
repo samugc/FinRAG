@@ -126,11 +126,11 @@ def create_app(
 
         filename = file.filename or ""
         if (
-            not re.fullmatch(r"[\\w .()\\-]{1,115}\\.pdf", filename, re.IGNORECASE)
+            not re.fullmatch(r"[\w .()\-]{1,115}\.pdf", filename, re.IGNORECASE)
             or filename.startswith(".")
             or ".." in filename
             or "/" in filename
-            or "\\\\" in filename
+            or "\\" in filename
         ):
             raise HTTPException(status_code=422, detail="Use a simple PDF filename")
 
