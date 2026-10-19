@@ -43,6 +43,15 @@ class QueryResponse(BaseModel):
     evidence: list[EvidenceItem]
 
 
+class DocumentItem(BaseModel):
+    source: str
+    chunks: int
+
+
+class DocumentsResponse(BaseModel):
+    documents: list[DocumentItem]
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok", "unavailable"]
     documents: int
@@ -73,6 +82,23 @@ def create_app(
             status="ok",
             documents=len(pipeline.documents),
             chunks=len(pipeline.chunks),
+        )
+
+    @app.get("/documents", response_model=DocumentsResponse)
+    def documents():
+        try:
+            pipeline = get_pipeline()
+        except (OSError, UnicodeError, ValueError) as exc:
+            raise HTTPException(status_code=503, detail="Corpus unavailable") from exc
+
+        counts = {document.source: 0 for document in pipeline.documents}
+        for chunk in pipeline.chunks:
+            counts[chunk.source] += 1
+        return DocumentsResponse(
+            documents=[
+                DocumentItem(source=source, chunks=count)
+                for source, count in sorted(counts.items())
+            ]
         )
 
     @app.post("/query", response_model=QueryResponse)
