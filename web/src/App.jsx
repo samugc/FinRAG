@@ -69,7 +69,7 @@ export default function App() {
 
   const last = [...entries].reverse().find((entry) => entry.type === "answer");
   const evidence = last?.data?.evidence || [];
-  const visibleEvidence = selectedDoc === "all" ? evidence : evidence.filter((hit) => hit.source === selectedDoc);
+  const visibleEvidence = evidence;
 
   async function ask(text = query) {
     const question = text.trim();
@@ -87,7 +87,7 @@ export default function App() {
       const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, retriever, generator, k }),
+        body: JSON.stringify({ question, retriever, generator, k, source: selectedDoc === "all" ? null : selectedDoc }),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -118,7 +118,7 @@ export default function App() {
           <h1>Ask better questions.<br /><span>Find the evidence.</span></h1>
           <p>Explore financial reports through retrieval-grounded answers. Every response comes with the source material so you can inspect it yourself.</p>
           <div className="suggestions">
-            <div className="suggest-title">TRY ASKING</div>
+            <div className="suggest-title">TRY ASKING {selectedDoc !== "all" ? "· SELECTED DOCUMENT" : ""}</div>
             {SAMPLES.map((item) => (
               <button key={item} className="suggestion" onClick={() => ask(item)}>
                 <span>{item}</span><ArrowRight size={16} />
@@ -222,7 +222,7 @@ export default function App() {
             <div className="evidence-placeholder"><div className="evidence-placeholder-icon"><FileText size={23}/></div><b>Your sources appear here</b><p>Ask a question to explore retrieved passages, relevance scores, and document origins.</p></div>
           ) : (
             <>
-              {selectedDoc !== "all" && <div className="filter-note"><Filter size={13}/> Viewing {labelName(selectedDoc)} <button onClick={() => setSelectedDoc("all")}>Clear</button></div>}
+              {selectedDoc !== "all" && <div className="filter-note"><Filter size={13}/> Scoped to {labelName(selectedDoc)} <button onClick={() => setSelectedDoc("all")}>Clear</button></div>}
               {visibleEvidence.map((hit, idx) => (
                 <button key={hit.source + hit.chunk_id + idx} className={"evidence-card " + (activeEvidence === idx ? "active-evidence" : "")} onClick={() => setActiveEvidence(idx)}>
                   <div className="evidence-card-top"><div className="file-badge"><FileText size={16}/></div><div className="file-head"><b>{labelName(hit.source)}</b><span>Chunk {hit.chunk_id} · Rank {evidence.indexOf(hit) + 1}</span></div><ChevronRight size={15}/></div>
