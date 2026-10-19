@@ -141,7 +141,7 @@ test("compare retrievers shows overlapping evidence without cross-method score c
   await page.goto("/");
   await expect(page.getByText("API connected")).toBeVisible();
   await page.getByRole("button", {name: /Compare/}).click();
-  await page.getByLabel("Question").fill("What do the reports say?");
+  await page.getByRole("textbox", { name: "Question", exact: true }).fill("What do the reports say?");
   await page.getByRole("button", {name: "Compare", exact: true}).click();
   await expect(page.getByText("1 shared chunk")).toBeVisible();
   await expect(page.locator(".compare-source")).toHaveCount(4);
