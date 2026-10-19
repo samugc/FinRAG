@@ -76,3 +76,16 @@ def test_reuses_fitted_pipeline_between_requests(tmp_path):
     client.post("/query", json={"question": "Revenue?"})
     client.post("/query", json={"question": "Revenue?"})
     assert calls == [1]
+
+def test_documents_lists_corpus_without_leaking_content(client):
+    response = client.get("/documents")
+    assert response.status_code == 200
+    assert response.json() == {
+        "documents": [{"source": "report.txt", "chunks": 1}]
+    }
+    assert "Northstar operating profit" not in response.text
+
+
+def test_documents_missing_corpus_returns_503(tmp_path):
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path / "missing")))
+    assert client.get("/documents").status_code == 503
