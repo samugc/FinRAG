@@ -1,6 +1,5 @@
 import re
 
-from finrag.context import format_context
 from finrag.retrieval import SearchResult
 
 
@@ -14,6 +13,31 @@ def validate_answer(answer: str, evidence_count: int) -> tuple[str, bool]:
         or re.fullmatch(r"INSUFFICIENT_EVIDENCE[.!]?", answer, re.IGNORECASE)
         or any(not 1 <= int(citation) <= evidence_count for citation in citations)
     ):
+        return "INSUFFICIENT_EVIDENCE", False
+    return answer, True
+
+
+
+_NUMBER = re.compile(r"(?<!\w)\d+(?:[.,]\d+)*(?!\w)")
+
+
+def validate_numeric_evidence(
+    answer: str,
+    results: list[SearchResult],
+) -> tuple[str, bool]:
+    """Conservatively reject numeric claims absent from document text.
+
+    This catches fabricated values and retrieval-score echoes. It is NOT
+    a factuality verifier: copied but irrelevant numbers can still pass.
+    """
+    content = re.sub(r"\[\d+\]", "", answer)
+    numbers = set(_NUMBER.findall(content))
+    observed = {
+        value
+        for hit in results
+        for value in _NUMBER.findall(hit.chunk.text)
+    }
+    if numbers - observed:
         return "INSUFFICIENT_EVIDENCE", False
     return answer, True
 
@@ -48,7 +72,13 @@ class LocalGenerator:
         if not results:
             return "INSUFFICIENT_EVIDENCE", False
 
-        context = format_context(results)
+        # Never expose similarity scores as evidence for the generator:
+        # the model may otherwise mistake a retrieval score for a financial value.
+        context = "\n\n".join(
+            f"[{index}] {hit.chunk.source} (chunk {hit.chunk.chunk_id})\n"
+            f"{hit.chunk.text}"
+            for index, hit in enumerate(results, start=1)
+        )
 
         messages = [
             {
@@ -94,4 +124,7 @@ class LocalGenerator:
             skip_special_tokens=True,
         ).strip()
 
-        return validate_answer(answer, len(results))
+        checked, valid = validate_answer(answer, len(results))
+        if not valid:
+            return checked, valid
+        return validate_numeric_evidence(checked, results)
