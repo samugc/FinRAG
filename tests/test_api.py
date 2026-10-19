@@ -178,6 +178,11 @@ def test_pdf_upload_updates_searchable_library_without_restart(tmp_path):
     assert query.status_code == 200, query.text
     assert "123 million euros" in query.json()["answer"]
     assert all(hit["source"] == "annual.pdf" for hit in query.json()["evidence"])
+    original = client.get("/documents/annual.pdf/file")
+    assert original.status_code == 200
+    assert original.content == payload
+    assert original.headers["content-type"] == "application/pdf"
+    assert original.headers["content-disposition"].startswith("inline;")
     dupe = client.post("/documents", files={"file": ("annual.pdf", payload, "application/pdf")},
                        headers={"X-FinRAG-Upload": "1"})
     assert dupe.status_code == 409
