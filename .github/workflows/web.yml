@@ -25,3 +25,9 @@ jobs:
       - name: Build web app
         working-directory: web
         run: npm run build
+      - name: Install Chromium for browser tests
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Run browser interaction tests
+        working-directory: web
+        run: npm run test:e2e
