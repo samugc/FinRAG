@@ -77,3 +77,38 @@ During development, one prompt returned only `[1]` for the unsupported question;
 The extractive baseline returns the highest-ranked chunk, not a synthesized answer. Its optional `--min-score` is only a retrieval cutoff, not an answerability detector; unrelated questions can still receive text.
 
 Word boundaries can split sentences and tables. PDF loading extracts embedded text without OCR, layout reconstruction or page-level citations; scanned PDFs may yield no text, and malformed PDFs can fail parsing. The hand-written relevance labels and tiny corpus limit the evaluation. There is no reranker or persistent index. Real financial reports and independently checked evidence labels would be needed before making broader quality claims.
+
+## FinanceBench: AMD exploratory study
+
+We evaluated page-level evidence retrieval on AMD's 2022 10-K using seven questions from FinanceBench.
+
+The report contains 121 PDF pages. We generated 998 chunks using 80 words per chunk and 15 words of overlap. All chunks were within MiniLM's 256-token input limit.
+
+### Retrieval results
+
+| Method | Hit@1 | Hit@3 | Hit@5 |
+| --- | ---: | ---: | ---: |
+| TF-IDF | 0.000 | 0.143 | 0.286 |
+| MiniLM | 0.286 | 0.571 | 0.714 |
+
+![TF-IDF vs MiniLM](results/figures/amd_tfidf_vs_minilm.png)
+
+Chunks are ranked by cosine similarity. Page rankings are obtained using the highest-scoring chunk per page. Hit@k measures whether at least one FinanceBench-annotated evidence page appears among the top-k distinct pages.
+
+MiniLM outperformed TF-IDF on this small AMD subset, but the result does not establish general superiority. The quick-ratio question remains difficult for both methods.
+
+These are exploratory development results, not held-out benchmark performance.
+
+### Reproduction
+
+Install the project with development dependencies and place the AMD 2022 10-K PDF and FinanceBench annotations in `data/external/financebench/`.
+
+```bash
+PYTHONPATH=src python scripts/evaluate_amd.py
+PYTHONPATH=src python scripts/compare_amd_chunks.py
+python scripts/plot_amd.py
+```
+
+The scripts generate JSON metrics and figures in `results/`.
+
+FinanceBench annotations: https://github.com/patronus-ai/financebench
