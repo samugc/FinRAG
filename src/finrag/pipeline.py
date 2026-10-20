@@ -12,6 +12,7 @@ from threading import Lock
 
 from finrag.answer import extractive_answer
 from finrag.documents import chunk_corpus, load_corpus
+from finrag.grounding import evidence_covers_requested_years
 from finrag.retrieval import SearchResult
 from finrag.sparse import SparseRetriever
 
@@ -94,7 +95,9 @@ class FinRAGPipeline:
                 raise ValueError("Selected document contains no extractable text")
 
         evidence = self._retriever(retriever, source).search(question, k=k)
-        if generator == "extractive":
+        if not evidence_covers_requested_years(question, evidence):
+            answer, sufficient = "INSUFFICIENT_EVIDENCE", False
+        elif generator == "extractive":
             result = extractive_answer(evidence, min_score=min_score)
             answer, sufficient = result.text, result.sufficient_evidence
         else:
