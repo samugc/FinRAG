@@ -60,3 +60,20 @@ def test_document_scope_rejects_unknown_and_empty(tmp_path):
         pipeline.query("revenue", source="missing.txt")
     with pytest.raises(ValueError, match="no extractable"):
         pipeline.query("revenue", source="empty.txt")
+
+
+def test_missing_requested_year_abstains_before_qwen(tmp_path):
+    (tmp_path / "amd.txt").write_text(
+        "AMD net revenue in 2022 was $23.6 billion. Net revenue in 2021 was $16.4 billion.",
+        encoding="utf-8",
+    )
+    pipeline = FinRAGPipeline(tmp_path)
+    class ShouldNotRun:
+        def answer(self, question, evidence):
+            raise AssertionError("Generator should not be invoked")
+    pipeline._generator = ShouldNotRun()
+    result = pipeline.query("What was AMD net revenue in 2040?", generator="qwen")
+    assert (result.answer, result.sufficient_evidence) == ("INSUFFICIENT_EVIDENCE", False)
+    supported = pipeline.query("What was AMD net revenue in 2022?", generator="extractive")
+    assert supported.sufficient_evidence
+    assert "23.6 billion" in supported.answer
