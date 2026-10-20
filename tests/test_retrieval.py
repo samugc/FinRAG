@@ -10,7 +10,7 @@ def retriever(request, monkeypatch):
     if request.param == "sparse":
         return SparseRetriever()
 
-    import finrag.dense as dense
+    from finrag import dense
 
     class Encoder:
         def __init__(self, model_name):

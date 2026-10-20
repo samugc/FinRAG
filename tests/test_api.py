@@ -1,5 +1,5 @@
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from finrag.api import create_app
 from finrag.pipeline import FinRAGPipeline
@@ -105,3 +105,94 @@ def test_query_scopes_document_sources(tmp_path):
     assert client.post(
         "/query", json={"question": "Profit?", "source": "missing.txt"}
     ).status_code == 422
+
+
+def _make_pdf(text: str) -> bytes:
+    from io import BytesIO
+
+    from pypdf import PdfWriter
+    # Blank PDFs have no extractable text, so this helper tests validation.
+    stream = BytesIO()
+    writer = PdfWriter()
+    writer.add_blank_page(width=300, height=300)
+    writer.write(stream)
+    return stream.getvalue()
+
+
+def test_pdf_upload_rejects_invalid_files_and_requires_header(tmp_path):
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path), corpus_dir=tmp_path))
+    body = {"file": ("example.pdf", b"not-a-pdf", "application/pdf")}
+    assert client.post("/documents", files=body).status_code == 403
+    assert client.post("/documents", files=body, headers={"X-FinRAG-Upload": "1"}).status_code == 422
+    assert not (tmp_path / "example.pdf").exists()
+
+
+def test_pdf_upload_rejects_scanned_pdf_and_duplicate(tmp_path):
+    (tmp_path / "report.txt").write_text("Profit 58 million euros", encoding="utf-8")
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path), corpus_dir=tmp_path))
+    headers = {"X-FinRAG-Upload": "1"}
+    empty_pdf = _make_pdf("")
+    response = client.post("/documents", files={"file": ("scan.pdf", empty_pdf, "application/pdf")}, headers=headers)
+    assert response.status_code == 422
+    assert "No selectable text" in response.json()["detail"]
+    assert not (tmp_path / "scan.pdf").exists()
+    response = client.post("/documents", files={"file": ("report.txt", empty_pdf, "application/pdf")}, headers=headers)
+    assert response.status_code == 422
+    response = client.post("/documents", files={"file": ("../escape.pdf", empty_pdf, "application/pdf")}, headers=headers)
+    assert response.status_code == 422
+    assert not (tmp_path.parent / "escape.pdf").exists()
+
+def test_pdf_upload_updates_searchable_library_without_restart(tmp_path):
+    from io import BytesIO
+
+    from pypdf import PdfWriter
+    from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
+    (tmp_path / "existing.txt").write_text("Existing financial report.", encoding="utf-8")
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=500, height=500)
+    font = DictionaryObject({
+        NameObject("/Type"): NameObject("/Font"),
+        NameObject("/Subtype"): NameObject("/Type1"),
+        NameObject("/BaseFont"): NameObject("/Helvetica"),
+    })
+    font_ref = writer._add_object(font)
+    page[NameObject("/Resources")] = DictionaryObject({
+        NameObject("/Font"): DictionaryObject({NameObject("/F1"): font_ref}),
+    })
+    stream = DecodedStreamObject()
+    stream.set_data(b"BT /F1 12 Tf 50 400 Td (Acme operating profit was 123 million euros.) Tj ET")
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    buffer = BytesIO()
+    writer.write(buffer)
+    payload = buffer.getvalue()
+
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path), corpus_dir=tmp_path))
+    assert client.get("/health").json()["documents"] == 1
+    response = client.post("/documents", files={"file": ("annual.pdf", payload, "application/pdf")},
+                           headers={"X-FinRAG-Upload": "1"})
+    assert response.status_code == 201, response.text
+    assert response.json()["source"] == "annual.pdf"
+    assert response.json()["chunks"] > 0
+    assert client.get("/health").json()["documents"] == 2
+    assert any(d["source"] == "annual.pdf" for d in client.get("/documents").json()["documents"])
+    query = client.post("/query", json={"question": "What was Acme operating profit?", "source": "annual.pdf"})
+    assert query.status_code == 200, query.text
+    assert "123 million euros" in query.json()["answer"]
+    assert all(hit["source"] == "annual.pdf" for hit in query.json()["evidence"])
+    original = client.get("/documents/annual.pdf/file")
+    assert original.status_code == 200
+    assert original.content == payload
+    assert original.headers["content-type"] == "application/pdf"
+    assert original.headers["content-disposition"].startswith("inline;")
+    dupe = client.post("/documents", files={"file": ("annual.pdf", payload, "application/pdf")},
+                       headers={"X-FinRAG-Upload": "1"})
+    assert dupe.status_code == 409
+
+
+def test_original_pdf_can_be_opened_only_if_registered(tmp_path):
+    (tmp_path / "report.txt").write_text("Revenue 42 euros", encoding="utf-8")
+    client = TestClient(create_app(lambda: FinRAGPipeline(tmp_path), corpus_dir=tmp_path))
+    assert client.get("/documents/report.txt/file").status_code == 404
+    assert client.get("/documents/missing.pdf/file").status_code == 404
+    assert client.get("/documents/..%2Fother.pdf/file").status_code == 404

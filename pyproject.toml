@@ -14,12 +14,14 @@ dependencies = [
     "sentence-transformers",
     "transformers",
     "torch",
+    "rank-bm25>=0.2.2,<0.3",
     "fastapi>=0.110",
     "uvicorn>=0.29",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "httpx"]
+dev = ["pytest", "matplotlib", "httpx"]
 
 [project.scripts]
 finrag = "finrag.cli:main"

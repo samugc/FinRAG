@@ -1,6 +1,6 @@
 import pytest
 
-from finrag.documents import Document, chunk_document, chunk_corpus, load_corpus
+from finrag.documents import Document, chunk_corpus, chunk_document, load_corpus
 
 
 def test_chunk_document_keeps_source():
@@ -46,3 +46,24 @@ def test_loading_filters_directories_and_preserves_sources(tmp_path):
     documents = load_corpus(tmp_path)
     assert [doc.source for doc in documents] == ["a.txt", "b.md"]
     assert documents[1].text == "Revenue €42 million"
+
+from pypdf import PdfWriter
+
+from finrag.documents import load_pdf_pages
+
+
+def test_load_pdf_pages_preserves_metadata(tmp_path):
+    path = tmp_path / "report.pdf"
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    writer.add_blank_page(width=200, height=200)
+
+    writer.write(path)
+
+    pages = load_pdf_pages(path)
+
+    assert len(pages) == 2
+    assert [p.page_index for p in pages] == [0, 1]
+    assert all(p.doc_name == "report" for p in pages)
+    assert all(p.text == "" for p in pages)

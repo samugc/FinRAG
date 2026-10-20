@@ -8,13 +8,14 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     ...devices["Desktop Chrome"],
-    baseURL: "http://127.0.0.1:5173",
+    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+    baseURL: "http://127.0.0.1:5183",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   webServer: {
     command: "npm run dev",
-    url: "http://127.0.0.1:5173",
+    url: "http://127.0.0.1:5183",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

@@ -73,6 +73,7 @@ def test_recall_counts_questions_not_matching_chunks():
 )
 def test_load_questions_rejects_invalid_annotations(tmp_path, questions):
     import json
+
     from finrag.evaluation import load_questions
 
     path = tmp_path / "questions.json"
@@ -83,6 +84,7 @@ def test_load_questions_rejects_invalid_annotations(tmp_path, questions):
 
 def test_load_questions_preserves_valid_annotations(tmp_path):
     import json
+
     from finrag.evaluation import load_questions
 
     questions = [{
@@ -94,3 +96,27 @@ def test_load_questions_preserves_valid_annotations(tmp_path):
     path = tmp_path / "questions.json"
     path.write_text(json.dumps(questions), encoding="utf-8")
     assert load_questions(path) == questions
+
+from finrag.evaluation import first_evidence_rank, rank_pages
+from finrag.retrieval import SearchResult
+
+
+def test_rank_pages_removes_duplicates():
+    hits = [
+        SearchResult(Chunk("AMD:p42", 0, "A"), 0.9),
+        SearchResult(Chunk("AMD:p42", 1, "B"), 0.8),
+        SearchResult(Chunk("AMD:p55", 0, "C"), 0.7),
+    ]
+
+    assert rank_pages(hits) == [42, 55]
+
+def test_first_evidence_rank():
+    assert first_evidence_rank([42, 55, 11], [55]) == 2
+    assert first_evidence_rank([42, 55], [3]) is None
+
+from finrag.evaluation import all_evidence_rank
+
+
+def test_all_evidence_rank():
+    assert all_evidence_rank([63, 42, 61], [61, 63]) == 3
+    assert all_evidence_rank([63, 42], [61, 63]) is None

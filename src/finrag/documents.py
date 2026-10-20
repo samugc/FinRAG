@@ -15,7 +15,15 @@ class Chunk:
     source: str
     chunk_id: int
     text: str
+    document_source: str | None = None
+    page_index: int | None = None
 
+
+@dataclass
+class Page:
+    doc_name: str
+    page_index: int
+    text: str
 
 def load_document(path: str | Path) -> Document:
     path = Path(path)
@@ -98,3 +106,22 @@ def chunk_corpus(
         )
 
     return chunks
+
+def load_pdf_pages(path: str | Path) -> list[Page]:
+    path = Path(path)
+    reader = PdfReader(path)
+
+    pages = []
+
+    for i, pdf_page in enumerate(reader.pages):
+        text = pdf_page.extract_text() or ""
+
+        pages.append(
+            Page(
+                doc_name=path.stem,
+                page_index=i,
+                text=text,
+            )
+        )
+
+    return pages

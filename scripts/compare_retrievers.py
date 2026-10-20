@@ -1,11 +1,10 @@
 import json
 from pathlib import Path
 
-from finrag.documents import load_corpus, chunk_corpus
 from finrag.dense import DenseRetriever
+from finrag.documents import chunk_corpus, load_corpus
 from finrag.evaluation import load_questions, recall_at_k
 from finrag.sparse import SparseRetriever
-
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -9,3 +9,12 @@ SESSION_HANDOFF.md
 .env.*
 dist/
 build/
+data/external/
+
+.local/
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+
+web/preview/

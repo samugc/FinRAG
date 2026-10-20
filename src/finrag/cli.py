@@ -1,7 +1,9 @@
 import argparse
 
+from finrag.answer import extractive_answer
 from finrag.context import format_context
-from finrag.pipeline import FinRAGPipeline
+from finrag.documents import chunk_corpus, load_corpus
+from finrag.sparse import SparseRetriever
 
 
 def main():
@@ -32,27 +34,52 @@ def main():
         parser.error("question must not be empty")
 
     try:
-        result = FinRAGPipeline(args.corpus).query(
-            args.question,
-            retriever=args.retriever,
-            generator=args.generator,
-            k=args.k,
+        documents = load_corpus(args.corpus)
+    except (OSError, UnicodeError) as exc:
+        parser.error(str(exc))
+    chunks = chunk_corpus(documents, chunk_size=25, overlap=5)
+
+    if not chunks:
+        parser.error("corpus contains no extractable text")
+
+    if args.retriever == "tfidf":
+        retriever = SparseRetriever()
+    else:
+        from finrag.dense import DenseRetriever
+
+        retriever = DenseRetriever()
+
+    retriever.fit(chunks)
+    results = retriever.search(args.question, k=args.k)
+
+    if args.generator == "qwen":
+        from finrag.generation import LocalGenerator
+
+        generator = LocalGenerator()
+        generated = generator.generate(args.question, results)
+        answer = generated.raw_answer or generated.status.value
+    else:
+        result = extractive_answer(
+            results,
             min_score=args.min_score,
         )
-    except (OSError, UnicodeError, ValueError) as exc:
-        parser.error(str(exc))
+        answer = result.text
+        sufficient = result.sufficient_evidence
 
-    print(f"\nQuestion: {result.question}")
-    print(f"Retriever: {result.retriever}")
-    print(f"Generator: {result.generator}")
+    print(f"\nQuestion: {args.question}")
+    print(f"Retriever: {args.retriever}")
+    print(f"Generator: {args.generator}")
+
     print("\nAnswer\n")
-    print(result.answer)
+    print(answer)
 
-    if not result.sufficient_evidence:
-        print("\nEvidence status: insufficient")
+    if args.generator == "qwen":
+        print(f"\nGeneration status: {generated.status.value}")
+    elif not sufficient:
+        print("\nExtractive score cutoff not met or no results")
 
     print("\nEvidence\n")
-    print(format_context(result.evidence))
+    print(format_context(results))
 
 
 if __name__ == "__main__":

@@ -34,9 +34,9 @@ def test_pipeline_rejects_invalid_input(pipeline, params):
         pipeline.query(**params)
 
 
-def test_empty_corpus_raises(tmp_path):
-    with pytest.raises(ValueError, match="extractable"):
-        FinRAGPipeline(tmp_path)
+def test_empty_corpus_can_receive_uploads(tmp_path):
+    pipeline = FinRAGPipeline(tmp_path)
+    assert pipeline.query("Revenue?").status.value == "no_evidence"
 
 def test_document_scope_filters_retrieval_and_is_cached(tmp_path):
     (tmp_path / "a.txt").write_text("Revenue 42 euros", encoding="utf-8")

@@ -1,0 +1,2127 @@
+{
+  "metadata": {
+    "documents": [
+      "3M_2018_10K",
+      "PEPSICO_2022_10K",
+      "AMD_2022_10K",
+      "BOEING_2022_10K",
+      "ULTABEAUTY_2023Q4_EARNINGS",
+      "3M_2023Q2_10Q"
+    ],
+    "questions": 28,
+    "chunk_size": 80,
+    "overlap": 15,
+    "evaluation": "within-document page Hit@k",
+    "rrf_constant": 60,
+    "rerank_top_n": 20,
+    "rerank_chunks_per_page": [
+      1,
+      3
+    ],
+    "query_planning": "deterministic financial rules"
+  },
+  "results": [
+    {
+      "question_id": "financebench_id_03029",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "tfidf",
+      "rank": 63,
+      "all_evidence_rank": 63
+    },
+    {
+      "question_id": "financebench_id_04672",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "tfidf",
+      "rank": 156,
+      "all_evidence_rank": 156
+    },
+    {
+      "question_id": "financebench_id_03029",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "bm25",
+      "rank": 147,
+      "all_evidence_rank": 147
+    },
+    {
+      "question_id": "financebench_id_04672",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "bm25",
+      "rank": 157,
+      "all_evidence_rank": 157
+    },
+    {
+      "question_id": "financebench_id_03029",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm",
+      "rank": 42,
+      "all_evidence_rank": 42
+    },
+    {
+      "question_id": "financebench_id_04672",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm",
+      "rank": 18,
+      "all_evidence_rank": 18
+    },
+    {
+      "question_id": "financebench_id_03029",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "hybrid_rrf",
+      "rank": 82,
+      "all_evidence_rank": 82
+    },
+    {
+      "question_id": "financebench_id_04672",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "hybrid_rrf",
+      "rank": 60,
+      "all_evidence_rank": 60
+    },
+    {
+      "question_id": "financebench_id_03029",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_multiquery",
+      "rank": 14,
+      "all_evidence_rank": 14
+    },
+    {
+      "question_id": "financebench_id_04672",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_multiquery",
+      "rank": 18,
+      "all_evidence_rank": 18
+    },
+    {
+      "question_id": "financebench_id_03029",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_reranked",
+      "rank": 42,
+      "all_evidence_rank": 42
+    },
+    {
+      "question_id": "financebench_id_03029",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 42,
+      "all_evidence_rank": 42
+    },
+    {
+      "question_id": "financebench_id_04672",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_reranked",
+      "rank": 12,
+      "all_evidence_rank": 12
+    },
+    {
+      "question_id": "financebench_id_04672",
+      "document": "3M_2018_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 15,
+      "all_evidence_rank": 15
+    },
+    {
+      "question_id": "financebench_id_00735",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 45,
+      "all_evidence_rank": 45
+    },
+    {
+      "question_id": "financebench_id_01009",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 5,
+      "all_evidence_rank": 122
+    },
+    {
+      "question_id": "financebench_id_01328",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 21,
+      "all_evidence_rank": 21
+    },
+    {
+      "question_id": "financebench_id_03620",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "tfidf",
+      "rank": 1,
+      "all_evidence_rank": 28
+    },
+    {
+      "question_id": "financebench_id_04481",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "tfidf",
+      "rank": 26,
+      "all_evidence_rank": 144
+    },
+    {
+      "question_id": "financebench_id_00735",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 49,
+      "all_evidence_rank": 49
+    },
+    {
+      "question_id": "financebench_id_01009",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 3,
+      "all_evidence_rank": 176
+    },
+    {
+      "question_id": "financebench_id_01328",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 8,
+      "all_evidence_rank": 8
+    },
+    {
+      "question_id": "financebench_id_03620",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "bm25",
+      "rank": 1,
+      "all_evidence_rank": 55
+    },
+    {
+      "question_id": "financebench_id_04481",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "bm25",
+      "rank": 22,
+      "all_evidence_rank": 346
+    },
+    {
+      "question_id": "financebench_id_00735",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 213,
+      "all_evidence_rank": 213
+    },
+    {
+      "question_id": "financebench_id_01009",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 11,
+      "all_evidence_rank": 49
+    },
+    {
+      "question_id": "financebench_id_01328",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 9,
+      "all_evidence_rank": 9
+    },
+    {
+      "question_id": "financebench_id_03620",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm",
+      "rank": 5,
+      "all_evidence_rank": 40
+    },
+    {
+      "question_id": "financebench_id_04481",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm",
+      "rank": 1,
+      "all_evidence_rank": 13
+    },
+    {
+      "question_id": "financebench_id_00735",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 96,
+      "all_evidence_rank": 96
+    },
+    {
+      "question_id": "financebench_id_01009",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 1,
+      "all_evidence_rank": 86
+    },
+    {
+      "question_id": "financebench_id_01328",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_03620",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "hybrid_rrf",
+      "rank": 1,
+      "all_evidence_rank": 28
+    },
+    {
+      "question_id": "financebench_id_04481",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "hybrid_rrf",
+      "rank": 3,
+      "all_evidence_rank": 55
+    },
+    {
+      "question_id": "financebench_id_00735",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 213,
+      "all_evidence_rank": 213
+    },
+    {
+      "question_id": "financebench_id_01009",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 11,
+      "all_evidence_rank": 49
+    },
+    {
+      "question_id": "financebench_id_01328",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 9,
+      "all_evidence_rank": 9
+    },
+    {
+      "question_id": "financebench_id_03620",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_multiquery",
+      "rank": 5,
+      "all_evidence_rank": 35
+    },
+    {
+      "question_id": "financebench_id_04481",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_multiquery",
+      "rank": 9,
+      "all_evidence_rank": 15
+    },
+    {
+      "question_id": "financebench_id_00735",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 213,
+      "all_evidence_rank": 213
+    },
+    {
+      "question_id": "financebench_id_00735",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 213,
+      "all_evidence_rank": 213
+    },
+    {
+      "question_id": "financebench_id_01009",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 14,
+      "all_evidence_rank": 49
+    },
+    {
+      "question_id": "financebench_id_01009",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 16,
+      "all_evidence_rank": 49
+    },
+    {
+      "question_id": "financebench_id_01328",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_01328",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_03620",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_reranked",
+      "rank": 1,
+      "all_evidence_rank": 40
+    },
+    {
+      "question_id": "financebench_id_03620",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 1,
+      "all_evidence_rank": 40
+    },
+    {
+      "question_id": "financebench_id_04481",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_reranked",
+      "rank": 5,
+      "all_evidence_rank": 14
+    },
+    {
+      "question_id": "financebench_id_04481",
+      "document": "PEPSICO_2022_10K",
+      "question_type": "metrics-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 6,
+      "all_evidence_rank": 13
+    },
+    {
+      "question_id": "financebench_id_00222",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 117,
+      "all_evidence_rank": 117
+    },
+    {
+      "question_id": "financebench_id_00563",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 22,
+      "all_evidence_rank": 22
+    },
+    {
+      "question_id": "financebench_id_00757",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 9,
+      "all_evidence_rank": 9
+    },
+    {
+      "question_id": "financebench_id_00917",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00995",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 12,
+      "all_evidence_rank": 12
+    },
+    {
+      "question_id": "financebench_id_01198",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 5,
+      "all_evidence_rank": 5
+    },
+    {
+      "question_id": "financebench_id_01279",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 7,
+      "all_evidence_rank": 7
+    },
+    {
+      "question_id": "financebench_id_00222",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 116,
+      "all_evidence_rank": 116
+    },
+    {
+      "question_id": "financebench_id_00563",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 10,
+      "all_evidence_rank": 10
+    },
+    {
+      "question_id": "financebench_id_00757",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 57,
+      "all_evidence_rank": 57
+    },
+    {
+      "question_id": "financebench_id_00917",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00995",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 12,
+      "all_evidence_rank": 12
+    },
+    {
+      "question_id": "financebench_id_01198",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 12,
+      "all_evidence_rank": 12
+    },
+    {
+      "question_id": "financebench_id_01279",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 9,
+      "all_evidence_rank": 9
+    },
+    {
+      "question_id": "financebench_id_00222",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 28,
+      "all_evidence_rank": 28
+    },
+    {
+      "question_id": "financebench_id_00563",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_00757",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 36,
+      "all_evidence_rank": 36
+    },
+    {
+      "question_id": "financebench_id_00917",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00995",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_01198",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_01279",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_00222",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 66,
+      "all_evidence_rank": 66
+    },
+    {
+      "question_id": "financebench_id_00563",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_00757",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 48,
+      "all_evidence_rank": 48
+    },
+    {
+      "question_id": "financebench_id_00917",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00995",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_01198",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_01279",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_00222",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00563",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_00757",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 36,
+      "all_evidence_rank": 36
+    },
+    {
+      "question_id": "financebench_id_00917",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00995",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_01198",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_01279",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_00222",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 28,
+      "all_evidence_rank": 28
+    },
+    {
+      "question_id": "financebench_id_00222",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 28,
+      "all_evidence_rank": 28
+    },
+    {
+      "question_id": "financebench_id_00563",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 9,
+      "all_evidence_rank": 9
+    },
+    {
+      "question_id": "financebench_id_00563",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 8,
+      "all_evidence_rank": 8
+    },
+    {
+      "question_id": "financebench_id_00757",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 36,
+      "all_evidence_rank": 36
+    },
+    {
+      "question_id": "financebench_id_00757",
+      "document": "AMD_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 36,
+      "all_evidence_rank": 36
+    },
+    {
+      "question_id": "financebench_id_00917",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00917",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00995",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_00995",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_01198",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_01198",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_01279",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_01279",
+      "document": "AMD_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_00464",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 83,
+      "all_evidence_rank": 83
+    },
+    {
+      "question_id": "financebench_id_00494",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_00517",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 172,
+      "all_evidence_rank": 172
+    },
+    {
+      "question_id": "financebench_id_00585",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 113,
+      "all_evidence_rank": 113
+    },
+    {
+      "question_id": "financebench_id_00678",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 147,
+      "all_evidence_rank": 147
+    },
+    {
+      "question_id": "financebench_id_01091",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 32,
+      "all_evidence_rank": 32
+    },
+    {
+      "question_id": "financebench_id_01290",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 38,
+      "all_evidence_rank": 146
+    },
+    {
+      "question_id": "financebench_id_00464",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 90,
+      "all_evidence_rank": 90
+    },
+    {
+      "question_id": "financebench_id_00494",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00517",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 172,
+      "all_evidence_rank": 172
+    },
+    {
+      "question_id": "financebench_id_00585",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 164,
+      "all_evidence_rank": 164
+    },
+    {
+      "question_id": "financebench_id_00678",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 162,
+      "all_evidence_rank": 162
+    },
+    {
+      "question_id": "financebench_id_01091",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 31,
+      "all_evidence_rank": 31
+    },
+    {
+      "question_id": "financebench_id_01290",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 38,
+      "all_evidence_rank": 151
+    },
+    {
+      "question_id": "financebench_id_00464",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_00494",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00517",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00585",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 5,
+      "all_evidence_rank": 5
+    },
+    {
+      "question_id": "financebench_id_00678",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_01091",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_01290",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 31,
+      "all_evidence_rank": 145
+    },
+    {
+      "question_id": "financebench_id_00464",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 19,
+      "all_evidence_rank": 19
+    },
+    {
+      "question_id": "financebench_id_00494",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00517",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 22,
+      "all_evidence_rank": 22
+    },
+    {
+      "question_id": "financebench_id_00585",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 27,
+      "all_evidence_rank": 27
+    },
+    {
+      "question_id": "financebench_id_00678",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 19,
+      "all_evidence_rank": 19
+    },
+    {
+      "question_id": "financebench_id_01091",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_01290",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 25,
+      "all_evidence_rank": 168
+    },
+    {
+      "question_id": "financebench_id_00464",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_00494",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00517",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00585",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 5,
+      "all_evidence_rank": 5
+    },
+    {
+      "question_id": "financebench_id_00678",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_01091",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_01290",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 31,
+      "all_evidence_rank": 145
+    },
+    {
+      "question_id": "financebench_id_00464",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00464",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00494",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00494",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00517",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00517",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00585",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 7,
+      "all_evidence_rank": 7
+    },
+    {
+      "question_id": "financebench_id_00585",
+      "document": "BOEING_2022_10K",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 9,
+      "all_evidence_rank": 9
+    },
+    {
+      "question_id": "financebench_id_00678",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 10,
+      "all_evidence_rank": 10
+    },
+    {
+      "question_id": "financebench_id_00678",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 11,
+      "all_evidence_rank": 11
+    },
+    {
+      "question_id": "financebench_id_01091",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 18,
+      "all_evidence_rank": 18
+    },
+    {
+      "question_id": "financebench_id_01091",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 15,
+      "all_evidence_rank": 15
+    },
+    {
+      "question_id": "financebench_id_01290",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 31,
+      "all_evidence_rank": 145
+    },
+    {
+      "question_id": "financebench_id_01290",
+      "document": "BOEING_2022_10K",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 31,
+      "all_evidence_rank": 145
+    },
+    {
+      "question_id": "financebench_id_00601",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00603",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00605",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_00606",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00601",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00603",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00605",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_00606",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00601",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00603",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 8,
+      "all_evidence_rank": 8
+    },
+    {
+      "question_id": "financebench_id_00605",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_00606",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 7,
+      "all_evidence_rank": 7
+    },
+    {
+      "question_id": "financebench_id_00601",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00603",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_00605",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 8,
+      "all_evidence_rank": 8
+    },
+    {
+      "question_id": "financebench_id_00606",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 4,
+      "all_evidence_rank": 4
+    },
+    {
+      "question_id": "financebench_id_00601",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00603",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 8,
+      "all_evidence_rank": 8
+    },
+    {
+      "question_id": "financebench_id_00605",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_00606",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 7,
+      "all_evidence_rank": 7
+    },
+    {
+      "question_id": "financebench_id_00601",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00601",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_00603",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 5,
+      "all_evidence_rank": 5
+    },
+    {
+      "question_id": "financebench_id_00603",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_00605",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 7,
+      "all_evidence_rank": 7
+    },
+    {
+      "question_id": "financebench_id_00605",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_00606",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_00606",
+      "document": "ULTABEAUTY_2023Q4_EARNINGS",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_00807",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 90,
+      "all_evidence_rank": 90
+    },
+    {
+      "question_id": "financebench_id_00941",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "tfidf",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_01858",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "novel-generated",
+      "method": "tfidf",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00807",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 88,
+      "all_evidence_rank": 88
+    },
+    {
+      "question_id": "financebench_id_00941",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "bm25",
+      "rank": 1,
+      "all_evidence_rank": 1
+    },
+    {
+      "question_id": "financebench_id_01858",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "novel-generated",
+      "method": "bm25",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00807",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 45,
+      "all_evidence_rank": 45
+    },
+    {
+      "question_id": "financebench_id_00941",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "minilm",
+      "rank": 17,
+      "all_evidence_rank": 17
+    },
+    {
+      "question_id": "financebench_id_01858",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "novel-generated",
+      "method": "minilm",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00807",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 69,
+      "all_evidence_rank": 69
+    },
+    {
+      "question_id": "financebench_id_00941",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "hybrid_rrf",
+      "rank": 5,
+      "all_evidence_rank": 5
+    },
+    {
+      "question_id": "financebench_id_01858",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "novel-generated",
+      "method": "hybrid_rrf",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00807",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 5,
+      "all_evidence_rank": 5
+    },
+    {
+      "question_id": "financebench_id_00941",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "minilm_multiquery",
+      "rank": 17,
+      "all_evidence_rank": 17
+    },
+    {
+      "question_id": "financebench_id_01858",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "novel-generated",
+      "method": "minilm_multiquery",
+      "rank": 2,
+      "all_evidence_rank": 2
+    },
+    {
+      "question_id": "financebench_id_00807",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 45,
+      "all_evidence_rank": 45
+    },
+    {
+      "question_id": "financebench_id_00807",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 45,
+      "all_evidence_rank": 45
+    },
+    {
+      "question_id": "financebench_id_00941",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked",
+      "rank": 6,
+      "all_evidence_rank": 6
+    },
+    {
+      "question_id": "financebench_id_00941",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "domain-relevant",
+      "method": "minilm_reranked_3chunks",
+      "rank": 5,
+      "all_evidence_rank": 5
+    },
+    {
+      "question_id": "financebench_id_01858",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked",
+      "rank": 3,
+      "all_evidence_rank": 3
+    },
+    {
+      "question_id": "financebench_id_01858",
+      "document": "3M_2023Q2_10Q",
+      "question_type": "novel-generated",
+      "method": "minilm_reranked_3chunks",
+      "rank": 3,
+      "all_evidence_rank": 3
+    }
+  ],
+  "summary": {
+    "tfidf": {
+      "overall": {
+        "hit_at_1": 0.17857142857142858,
+        "hit_at_3": 0.2857142857142857,
+        "hit_at_5": 0.39285714285714285
+      },
+      "by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.2,
+          "hit_at_3": 0.2,
+          "hit_at_5": 0.4
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.14285714285714285,
+          "hit_at_5": 0.2857142857142857
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.14285714285714285
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.75,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.3333333333333333,
+          "hit_at_3": 0.6666666666666666,
+          "hit_at_5": 0.6666666666666666
+        }
+      },
+      "all_evidence_overall": {
+        "hit_at_1": 0.14285714285714285,
+        "hit_at_3": 0.25,
+        "hit_at_5": 0.32142857142857145
+      },
+      "all_evidence_by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.14285714285714285,
+          "hit_at_5": 0.2857142857142857
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.14285714285714285
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.75,
+          "hit_at_3": 1.0,
+          "hit_at_5": 1.0
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.3333333333333333,
+          "hit_at_3": 0.6666666666666666,
+          "hit_at_5": 0.6666666666666666
+        }
+      }
+    },
+    "bm25": {
+      "overall": {
+        "hit_at_1": 0.21428571428571427,
+        "hit_at_3": 0.32142857142857145,
+        "hit_at_5": 0.32142857142857145
+      },
+      "by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.2,
+          "hit_at_3": 0.4,
+          "hit_at_5": 0.4
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.14285714285714285,
+          "hit_at_5": 0.14285714285714285
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.14285714285714285,
+          "hit_at_5": 0.14285714285714285
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.5,
+          "hit_at_3": 0.75,
+          "hit_at_5": 0.75
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.3333333333333333,
+          "hit_at_3": 0.6666666666666666,
+          "hit_at_5": 0.6666666666666666
+        }
+      },
+      "all_evidence_overall": {
+        "hit_at_1": 0.17857142857142858,
+        "hit_at_3": 0.25,
+        "hit_at_5": 0.25
+      },
+      "all_evidence_by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.14285714285714285,
+          "hit_at_5": 0.14285714285714285
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.14285714285714285,
+          "hit_at_5": 0.14285714285714285
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.5,
+          "hit_at_3": 0.75,
+          "hit_at_5": 0.75
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.3333333333333333,
+          "hit_at_3": 0.6666666666666666,
+          "hit_at_5": 0.6666666666666666
+        }
+      }
+    },
+    "minilm": {
+      "overall": {
+        "hit_at_1": 0.17857142857142858,
+        "hit_at_3": 0.39285714285714285,
+        "hit_at_5": 0.5357142857142857
+      },
+      "by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.2,
+          "hit_at_3": 0.2,
+          "hit_at_5": 0.4
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.2857142857142857,
+          "hit_at_3": 0.5714285714285714,
+          "hit_at_5": 0.7142857142857143
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.5714285714285714,
+          "hit_at_5": 0.8571428571428571
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.25,
+          "hit_at_5": 0.25
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.3333333333333333
+        }
+      },
+      "all_evidence_overall": {
+        "hit_at_1": 0.14285714285714285,
+        "hit_at_3": 0.35714285714285715,
+        "hit_at_5": 0.4642857142857143
+      },
+      "all_evidence_by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.2857142857142857,
+          "hit_at_3": 0.5714285714285714,
+          "hit_at_5": 0.7142857142857143
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.5714285714285714,
+          "hit_at_5": 0.8571428571428571
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.25,
+          "hit_at_5": 0.25
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.3333333333333333
+        }
+      }
+    },
+    "hybrid_rrf": {
+      "overall": {
+        "hit_at_1": 0.17857142857142858,
+        "hit_at_3": 0.42857142857142855,
+        "hit_at_5": 0.5357142857142857
+      },
+      "by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.4,
+          "hit_at_3": 0.8,
+          "hit_at_5": 0.8
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.5714285714285714,
+          "hit_at_5": 0.7142857142857143
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.14285714285714285,
+          "hit_at_5": 0.14285714285714285
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.5,
+          "hit_at_5": 0.75
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.6666666666666666
+        }
+      },
+      "all_evidence_overall": {
+        "hit_at_1": 0.10714285714285714,
+        "hit_at_3": 0.32142857142857145,
+        "hit_at_5": 0.42857142857142855
+      },
+      "all_evidence_by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.2,
+          "hit_at_5": 0.2
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.5714285714285714,
+          "hit_at_5": 0.7142857142857143
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.14285714285714285,
+          "hit_at_5": 0.14285714285714285
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.5,
+          "hit_at_5": 0.75
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.6666666666666666
+        }
+      }
+    },
+    "minilm_reranked": {
+      "overall": {
+        "hit_at_1": 0.17857142857142858,
+        "hit_at_3": 0.35714285714285715,
+        "hit_at_5": 0.4642857142857143
+      },
+      "by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.4,
+          "hit_at_3": 0.4,
+          "hit_at_5": 0.6
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.42857142857142855,
+          "hit_at_5": 0.5714285714285714
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.42857142857142855,
+          "hit_at_5": 0.42857142857142855
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.25,
+          "hit_at_5": 0.5
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.3333333333333333
+        }
+      },
+      "all_evidence_overall": {
+        "hit_at_1": 0.14285714285714285,
+        "hit_at_3": 0.32142857142857145,
+        "hit_at_5": 0.39285714285714285
+      },
+      "all_evidence_by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.2,
+          "hit_at_3": 0.2,
+          "hit_at_5": 0.2
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.42857142857142855,
+          "hit_at_5": 0.5714285714285714
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.42857142857142855,
+          "hit_at_5": 0.42857142857142855
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.25,
+          "hit_at_5": 0.5
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.3333333333333333
+        }
+      }
+    },
+    "minilm_reranked_3chunks": {
+      "overall": {
+        "hit_at_1": 0.21428571428571427,
+        "hit_at_3": 0.35714285714285715,
+        "hit_at_5": 0.42857142857142855
+      },
+      "by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.4,
+          "hit_at_3": 0.4,
+          "hit_at_5": 0.4
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.42857142857142855,
+          "hit_at_5": 0.5714285714285714
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.2857142857142857,
+          "hit_at_3": 0.42857142857142855,
+          "hit_at_5": 0.42857142857142855
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.25,
+          "hit_at_5": 0.25
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.6666666666666666
+        }
+      },
+      "all_evidence_overall": {
+        "hit_at_1": 0.17857142857142858,
+        "hit_at_3": 0.32142857142857145,
+        "hit_at_5": 0.39285714285714285
+      },
+      "all_evidence_by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.2,
+          "hit_at_3": 0.2,
+          "hit_at_5": 0.2
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.42857142857142855,
+          "hit_at_5": 0.5714285714285714
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.2857142857142857,
+          "hit_at_3": 0.42857142857142855,
+          "hit_at_5": 0.42857142857142855
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.25,
+          "hit_at_5": 0.25
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.6666666666666666
+        }
+      }
+    },
+    "minilm_multiquery": {
+      "overall": {
+        "hit_at_1": 0.17857142857142858,
+        "hit_at_3": 0.39285714285714285,
+        "hit_at_5": 0.5714285714285714
+      },
+      "by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.2
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.42857142857142855,
+          "hit_at_3": 0.7142857142857143,
+          "hit_at_5": 0.8571428571428571
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.5714285714285714,
+          "hit_at_5": 0.8571428571428571
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.25,
+          "hit_at_5": 0.25
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.6666666666666666
+        }
+      },
+      "all_evidence_overall": {
+        "hit_at_1": 0.17857142857142858,
+        "hit_at_3": 0.39285714285714285,
+        "hit_at_5": 0.5357142857142857
+      },
+      "all_evidence_by_document": {
+        "3M_2018_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "PEPSICO_2022_10K": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.0,
+          "hit_at_5": 0.0
+        },
+        "AMD_2022_10K": {
+          "hit_at_1": 0.42857142857142855,
+          "hit_at_3": 0.7142857142857143,
+          "hit_at_5": 0.8571428571428571
+        },
+        "BOEING_2022_10K": {
+          "hit_at_1": 0.14285714285714285,
+          "hit_at_3": 0.5714285714285714,
+          "hit_at_5": 0.8571428571428571
+        },
+        "ULTABEAUTY_2023Q4_EARNINGS": {
+          "hit_at_1": 0.25,
+          "hit_at_3": 0.25,
+          "hit_at_5": 0.25
+        },
+        "3M_2023Q2_10Q": {
+          "hit_at_1": 0.0,
+          "hit_at_3": 0.3333333333333333,
+          "hit_at_5": 0.6666666666666666
+        }
+      }
+    }
+  }
+}
