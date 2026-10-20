@@ -11,6 +11,9 @@ dist/
 build/
 data/external/
 
+# Locally supplied financial PDFs must never be committed
+data/raw/*.pdf
+
 .local/
 web/node_modules/
 web/dist/
