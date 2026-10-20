@@ -189,6 +189,9 @@ This document describes the integrated release candidate tested locally on 20 Oc
 
 ## Data, attribution, and license
 
+**Third-party data:** FinanceBench is developed by Patronus AI. The FinanceBench dataset is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The evaluation manifests and derived results in this repository use FinanceBench annotations and must respect that license. The project's MIT license applies to original FinRAG code, not to third-party datasets, financial reports, or model weights.
+
+
 FinanceBench is an external benchmark by its original authors. This project evaluates against it; it does not claim ownership of its annotations or of companies' annual reports. Before releasing assets, confirm redistribution terms and avoid committing downloaded third-party PDFs unless permitted.
 
 **License:** The original FinRAG code is released under the [MIT License](LICENSE). Third-party datasets, pretrained models, PDF filings, fonts and dependencies retain their own licenses and redistribution conditions.
