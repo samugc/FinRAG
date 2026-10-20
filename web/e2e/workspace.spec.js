@@ -225,7 +225,7 @@ test("uploaded report does not show unrelated Northstar example prompts", async 
   }));
   await page.goto("/");
   await page.getByRole("button", { name: /AMD 2022 10K/ }).click();
-  await expect(page.getByText("SELECTED DOCUMENT")).toBeVisible();
+  await expect(page.locator(".suggest-title")).toContainText("SELECTED DOCUMENT");
   await expect(page.getByRole("button", { name: /Northstar's operating profit/ })).toHaveCount(0);
   await expect(page.getByText("Retrieval is restricted to the selected document.")).toBeVisible();
 });
