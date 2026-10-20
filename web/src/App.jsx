@@ -228,7 +228,7 @@ export default function App() {
               <button className={"document-item " + (selectedDoc === doc.source ? "doc-selected" : "")} onClick={() => { setSelectedDoc(doc.source); setMobilePanel(""); }}>
                 <FileText size={17}/><span title={doc.source}>{labelName(doc.source)}</span>
               </button>
-              {/\\.pdf$/i.test(doc.source) && (
+              {/\.pdf$/i.test(doc.source) && (
                 <a className="pdf-open" aria-label={"Open " + doc.source + " PDF"} title="Open original PDF" href={"/api/documents/" + encodeURIComponent(doc.source) + "/file"} target="_blank" rel="noopener noreferrer">
                   <ExternalLink size={15}/>
                 </a>
