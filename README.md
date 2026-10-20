@@ -6,7 +6,7 @@ FinRAG is a Python and React research application for asking questions about fin
 
 **No paid LLM API or API key is required for inference.** The app is intended to run on a local machine, not as an internet-facing service. Model acquisition and some frontend assets may require an initial network connection.
 
-> **Release candidate — 20 October 2026.** This README is prepared for the **integrated source tree** after it is committed and published. Until then, the public default branch may show an older build. The features and local test results below refer to the integrated tree, not the older public CI.
+**Project status (October 2026):** The integrated application is published on `main` and has passed Python and web CI. It remains a local research system rather than a hosted or production service.
 
 ## Why this project
 
@@ -18,7 +18,7 @@ The system was developed to answer practical engineering questions: How do lexic
 
 The integrated interface includes chat, document library, PDF upload, Evidence Explorer, original-PDF page links, response states, a sparse-versus-dense retrieval comparison, and a selectable Multi-Query mode for a single PDF.
 
-**Screenshots are intentionally not embedded until they are captured from the tested release.** Planned assets:
+**Real-session screenshots are not yet embedded.** The existing automated visual previews use mocked API data and must not be represented as live Ollama output. Planned screenshots from a local session:
 
 - `docs/screenshots/workspace-overview.png` — application layout and loaded public/sample report.
 - `docs/screenshots/amd-answer-evidence.png` — AMD revenue question, answer, and cited passage (after manual source check).
@@ -55,7 +55,7 @@ Financial PDFs / local text reports
 
 Python owns extraction, retrieval, evidence handling, model inference, and response status. FastAPI exposes these results; React displays them without recomputing retrieval or financial figures. The UI's retrieval comparison is a qualitative diagnostic, not a substitute for benchmark evaluation.
 
-**Scope:** the published release must include the integrated FastAPI + Ollama path described here. The older public `main` revision used a different Transformers-based generation path; do not use its CI results as evidence for this release.
+**Scope:** the default branch includes the integrated FastAPI + Ollama path described here. This is a local research workflow, not a deployed public service.
 
 ## Stack
 
@@ -74,7 +74,7 @@ The project uses individual retrieval and inference components rather than relyi
 
 ## What works
 
-**Observed in the local integrated release candidate:**
+**Verified in the integrated local application:**
 
 - Upload and consultation of text-based financial PDFs through the React workspace.
 - Document-scoped queries, evidence inspection, and links to original PDF pages.
@@ -154,17 +154,17 @@ Open `http://127.0.0.1:5183/` and use a single local PDF for Multi-Query mode. T
 
 ### Tests and quality checks
 
-The local integrated tree passed these checks on 20 October 2026:
+The integrated tree passed these local checks on 20 October 2026; the Python and web GitHub Actions workflows also passed before the integration PR was merged:
 
 | Check | Local result | Scope |
 | --- | --- | --- |
 | `PYTHONPATH=src python -m pytest -q` | **146 passed**, one third-party deprecation warning | Python / API |
 | `ruff check .` | **Passed** | Python lint |
-| `cd web && npm test -- --run` | **9 passed** | Frontend logic |
+| `cd web && npm test` | **9 passed** | Frontend logic |
 | `cd web && npx playwright test --reporter=line` | **17 passed** | Browser/UI flows, primarily mocked HTTP responses |
 | `cd web && npm run build` | **Passed** | Production frontend build |
 
-The Playwright run is **not** a browser-to-real-Ollama accuracy benchmark. Separately, real local AMD 2022/2021 questions returned the expected revenue figures, and an unsupported FY2040 request produced `insufficient_context`; these are manual cases, not statistical accuracy estimates. Counts should be rerun on the final released commit and checked against CI.
+The Playwright run is **not** a browser-to-real-Ollama accuracy benchmark. Separately, real local AMD 2022/2021 questions returned the expected revenue figures, and an unsupported FY2040 request produced `insufficient_context`; these are manual cases, not statistical accuracy estimates. The automated CI covers Python tests and the web build/browser suite; frontend unit tests and lint were also run locally. These checks do not establish end-to-end factual answer accuracy.
 
 ## Limitations and safety
 
@@ -183,9 +183,9 @@ The Playwright run is **not** a browser-to-real-Ollama accuracy benchmark. Separ
 3. Add browser-to-real-Ollama integration checks alongside the currently passing mocked-browser suite.
 4. Verify clean-checkout installation, document precise dependency/model versions, and reproduce the holdout metrics from released scripts.
 
-## Release provenance
+## Validation provenance
 
-This document describes the integrated release candidate tested locally on 20 October 2026. **Before advertising it as the GitHub default branch**, publish the corresponding commit, verify GitHub Actions against that SHA, and ensure the installation steps and screenshots refer to that exact code. The older public `main` and the open PDF-upload PR do **not** establish results for the integrated version.
+The integrated application was merged into `main` through [pull request #4](https://github.com/samugc/FinRAG/pull/4) after both Python and Web CI passed. Historical PDF-upload work was consolidated and its separate PR closed. Browser previews produced by CI use deterministic mocked API responses; manually verified AMD financial figures come from separate local sessions. Neither constitutes automated factual validation of generated answers.
 
 ## Data, attribution, and license
 
@@ -200,4 +200,4 @@ FinanceBench is an external benchmark by its original authors. This project eval
 
 **Project:** [github.com/samugc/FinRAG](https://github.com/samugc/FinRAG)
 
-**Status:** integrated local research application, awaiting publication of the tested release candidate; **not a production financial-advice tool**.
+**Status:** published local research application; **not a production financial-advice tool**.
