@@ -216,3 +216,16 @@ test("upload API rejection shows a readable error", async ({ page }) => {
   });
   await expect(page.locator(".global-error")).toContainText("scanned PDFs need OCR");
 });
+
+
+test("uploaded report does not show unrelated Northstar example prompts", async ({ page }) => {
+  await fakeHealthyBackend(page);
+  await page.route("**/api/documents", route => route.fulfill({
+    json: { documents: [{ source: "AMD_2022_10K.pdf", chunks: 3137 }] },
+  }));
+  await page.goto("/");
+  await page.getByRole("button", { name: /AMD 2022 10K/ }).click();
+  await expect(page.getByText("SELECTED DOCUMENT")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Northstar's operating profit/ })).toHaveCount(0);
+  await expect(page.getByText("Retrieval is restricted to the selected document.")).toBeVisible();
+});
