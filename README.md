@@ -1,94 +1,203 @@
 # FinRAG
 
-Local question answering over financial documents with **TF-IDF or MiniLM retrieval**, source-aware context construction and either an extractive baseline or local **Qwen** generation.
+**Local financial-document question answering with inspectable evidence and measurable retrieval.**
 
-The project keeps retrieval, context construction and generation separate so each stage can be evaluated independently. No paid API or API key is required.
+FinRAG is a Python and React research application for asking questions about financial reports. It combines document retrieval, local language-model generation, and a workspace where users can inspect the underlying passages and open the corresponding PDF pages. The project also includes controlled retrieval experiments on [FinanceBench](https://github.com/patronus-ai/financebench).
 
-## Results at a glance
+**No paid LLM API or API key is required for inference.** The app is intended to run on a local machine, not as an internet-facing service. Model acquisition and some frontend assets may require an initial network connection.
 
-The included evaluation corpus is intentionally small and controlled: **4 documents, 12 chunks, 12 answerable questions and 6 unanswerable questions**. It is useful for testing the pipeline, not as a representative financial QA benchmark.
+> **Release candidate — 20 October 2026.** This README is prepared for the **integrated source tree** after it is committed and published. Until then, the public default branch may show an older build. The features and local test results below refer to the integrated tree, not the older public CI.
 
-| Retriever | Recall@1 | Recall@3 |
-| --- | ---: | ---: |
-| TF-IDF | **0.833** | **1.000** |
-| MiniLM | 0.750 | **1.000** |
+## Why this project
 
-TF-IDF ranks better on this corpus, while both retrievers recover accepted evidence within the top 3 for every answerable question. With only 12 answerable questions, this does not establish a general advantage of sparse over dense retrieval.
+A financial question may require facts from several pages, the correct reporting period, and arithmetic. Finding passages that look relevant is not the same as producing a correct answer. FinRAG makes those stages inspectable instead of treating a plausible model response as proof.
 
-A second check shows why retrieval score alone is not enough for answerability: the top-1 similarity ranges for answerable and unanswerable questions overlap for both retrievers, so no single score threshold cleanly separates the two.
+The system was developed to answer practical engineering questions: How do lexical and semantic retrieval compare? Can citations be traced to an original report? When does a local model abstain incorrectly? What would be needed to calculate financial quantities without delegating arithmetic to a language model?
 
-## Pipeline
+## Workspace
+
+The integrated interface includes chat, document library, PDF upload, Evidence Explorer, original-PDF page links, response states, a sparse-versus-dense retrieval comparison, and a selectable Multi-Query mode for a single PDF.
+
+**Screenshots are intentionally not embedded until they are captured from the tested release.** Planned assets:
+
+- `docs/screenshots/workspace-overview.png` — application layout and loaded public/sample report.
+- `docs/screenshots/amd-answer-evidence.png` — AMD revenue question, answer, and cited passage (after manual source check).
+- `docs/screenshots/pdf-page-navigation.png` — cited page open in the PDF viewer.
+- `docs/screenshots/retrieval-comparison.png` — TF-IDF versus MiniLM evidence comparison.
+
+## Architecture
 
 ```text
-TXT / Markdown / PDF → 25-word chunks, 5-word overlap
-                    → TF-IDF or MiniLM → cosine ranking → top-k chunks
-                    → context with sources → extractive answer or local Qwen
+Financial PDFs / local text reports
+               |
+        Text extraction + chunking
+               |
+   Document + page/source provenance
+               |
+        Retrieval / ranking
+        |             |
+  TF-IDF, MiniLM    Research variants:
+                    BM25, RRF, Multi-Query,
+                    Cross-Encoder reranking
+               |
+     Retrieved evidence + provenance
+               |
+   Answer / insufficient-context decisions
+               |
+  Local Qwen via Ollama (integrated build)
+               |
+    Response + status + source references
+               |
+       FastAPI <----> React / Vite
+               |
+    Chat, evidence explorer, PDF viewer
 ```
 
-The Python pipeline implements document loading, word-based chunking with overlap, source metadata, cosine ranking, context construction and retrieval evaluation without a RAG framework. It uses scikit-learn for TF-IDF, Sentence Transformers for pretrained MiniLM embeddings and Transformers for Qwen inference; the models are not trained here.
+Python owns extraction, retrieval, evidence handling, model inference, and response status. FastAPI exposes these results; React displays them without recomputing retrieval or financial figures. The UI's retrieval comparison is a qualitative diagnostic, not a substitute for benchmark evaluation.
 
-Sparse retrieval computes cosine similarity over TF-IDF vectors. Dense retrieval uses `sentence-transformers/all-MiniLM-L6-v2`; normalized embeddings make their dot product equal to cosine similarity. Each result retains its filename, chunk id and score. Retrieval, context formatting and generation remain separate modules.
+**Scope:** the published release must include the integrated FastAPI + Ollama path described here. The older public `main` revision used a different Transformers-based generation path; do not use its CI results as evidence for this release.
 
-## Evaluation
+## Stack
 
-Retrieval is evaluated independently of generation. Here, Recall@k means the fraction of questions with **at least one accepted evidence chunk** in the top k (also called hit rate). Questions can accept multiple chunk ids where overlap repeats evidence; this is not recall over every relevant chunk.
+| Layer | Technology |
+| --- | --- |
+| Backend/API | Python (tested locally with 3.13), FastAPI, Pydantic, Uvicorn |
+| Frontend | React, Vite, application CSS, Lucide icons |
+| Lexical retrieval | TF-IDF with scikit-learn; BM25 investigated separately |
+| Semantic retrieval | Sentence Transformers / MiniLM |
+| Retrieval experiments | RRF fusion, Multi-Query, Cross-Encoder reranking |
+| Local generation | Ollama + `qwen3:4b-instruct` (integrated version) |
+| PDF extraction | pypdf, with PDF page/source provenance |
+| Tests | pytest, frontend/browser tests with Playwright |
 
-| Retriever | Questions | Recall@1 | Recall@3 |
-| --- | --- | ---: | ---: |
-| TF-IDF | All | 0.833 | 1.000 |
-| TF-IDF | Lexical | 1.000 | 1.000 |
-| TF-IDF | Paraphrase | 0.667 | 1.000 |
-| MiniLM | All | 0.750 | 1.000 |
-| MiniLM | Lexical | 0.833 | 1.000 |
-| MiniLM | Paraphrase | 0.667 | 1.000 |
+The project uses individual retrieval and inference components rather than relying on a managed RAG service. **Models are pretrained, not fine-tuned as part of this project.**
 
-TF-IDF ranks better on this particular corpus. With only six lexical and six paraphrased questions, this does not establish a general advantage over dense retrieval. The comparison script regenerates `results/retrieval_metrics.json`.
+## What works
 
-Raw similarity did not reliably determine whether an answer existed in the corpus:
+**Observed in the local integrated release candidate:**
 
-| Retriever | Lowest answerable top-1 score | Highest unanswerable top-1 score |
+- Upload and consultation of text-based financial PDFs through the React workspace.
+- Document-scoped queries, evidence inspection, and links to original PDF pages.
+- TF-IDF, MiniLM, and Multi-Query available in the local application.
+- Local generation with Ollama/Qwen3, with distinct insufficient-context, model-abstention, and technical-error states.
+- A comparison view for sparse and dense retrieved passages.
+- Correctly retrieved/reported AMD net revenue figures for FY2022 (**$23,601 million**) and FY2021 (**$16,434 million**) in the reported local checks. These are individual case checks, **not** a measured answer-accuracy rate.
+
+**Research-only or additional retrieval components:** BM25, RRF fusion, and Cross-Encoder reranking were investigated and evaluated; they are not all selectable in the React interface. Multi-Query is selectable in the integrated UI.
+
+## Retrieval evaluation
+
+### FinanceBench page retrieval
+
+These results come from separate pilot and holdout research evaluations. They measure **retrieval coverage, not end-to-end answer correctness**. Reproducing the exact holdout scores from a clean clone still requires verification of the benchmark document manifest, settings, and external data access.
+
+| Split | Questions | Reports | MiniLM all-evidence Hit@5 | Multi-Query all-evidence Hit@5 |
+| --- | ---: | ---: | ---: | ---: |
+| Pilot | 28 | 6 | 46.4% | 53.6% |
+| Holdout | 34 | 10 | 20.6% | 26.5% |
+
+**All-evidence Hit@5** is the fraction of questions for which **every annotated supporting page** occurs within the five highest-ranked distinct pages for the relevant report. It is stricter than finding at least one supporting page. It does not assess whether the generator used the pages correctly or produced the right number.
+
+The lower holdout scores are material. They show that evidence recovery is far from solved and that pilot improvements should not be presented as broad reliability claims. To describe these results as independently reproducible, publish the corresponding experiment settings, document manifest, evaluation commands, and permitted artifacts; downloaded reports need not be redistributed.
+
+### Small synthetic regression corpus
+
+The project also includes a controlled synthetic example with **4 documents, 12 chunks, and 12 answerable questions** (plus 6 unanswerable questions used to study score overlap). It is useful for verifying retrieval code, **not** for benchmarking real financial QA.
+
+| Retriever | At least one accepted chunk @1 | @3 |
 | --- | ---: | ---: |
-| TF-IDF | 0.2107 | 0.3670 |
-| MiniLM | 0.4865 | 0.7287 |
+| TF-IDF | 83.3% | 100.0% |
+| MiniLM | 75.0% | 100.0% |
 
-The score ranges overlap. Similarity is useful for ranking, but no single score cutoff separates these answerable and unanswerable questions.
+The small-corpus script calls this metric `Recall@k`, but its operational definition is an **any-evidence hit rate**: at least one accepted chunk in top-k. It is not the same as the FinanceBench **all-evidence** measure above. Do not compare these two tables as equivalent experiments.
 
-## Run
+### Failure analysis
 
-Use Python 3.11 or newer. From the repository root:
+In **39 real Ollama inferences** across several evidence/prompt conditions, the retrieval stage supplied the required figures for a financial calculation, while generation could abstain, omit components, or describe arithmetic incorrectly. This motivated the planned deterministic-calculation path rather than another claim that prompting alone solved grounding.
+
+## Running locally
+
+**Development environment verified on macOS:** Python 3.13, a local Ollama service with `qwen3:4b-instruct`, and a Vite/React frontend. This is a local research application, **not** a hardened public server. Setup from a completely clean checkout and other platforms has not yet been independently verified.
+
+For a new checkout, prepare the Python and JavaScript environments (Python version compatibility below 3.13 is not asserted here):
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
-pytest -q
-python scripts/compare_retrievers.py
-python scripts/analyze_confidence.py
-
-finrag "What was Northstar's operating profit?" --retriever tfidf --generator extractive
-finrag "What was Northstar's operating profit?" --retriever minilm --generator qwen
-finrag "What dividend per share did Northstar distribute?" --retriever minilm --generator qwen
+python -m pip install -e ".[dev]"
+cd web
+npm ci
+cd ..
 ```
 
-The default corpus is `data/raw` relative to the current directory. Use `--corpus PATH` from another directory or for your own documents. `--k` defaults to 3. The evaluation scripts always use the included corpus.
+Install [Ollama](https://ollama.com/) separately, start its local service, and fetch the intended model:
 
-The first model run downloads weights from Hugging Face; no paid API or API key is required. After caching the weights, `HF_HUB_OFFLINE=1` disables Hub checks. Qwen uses Apple Silicon MPS when available and otherwise CPU; CPU generation can be slower. Models are loaded once per CLI invocation, and corpus embeddings are computed on each dense retriever fit.
+```bash
+ollama pull qwen3:4b-instruct
+```
 
-## Generation checks and limitations
+Run backend and frontend in **separate terminals** from the repository root:
 
-`Qwen/Qwen2.5-0.5B-Instruct` receives the retrieved evidence and an instruction to answer from it or return `INSUFFICIENT_EVIDENCE`. In the manual checks on Apple Silicon MPS:
+```bash
+# Terminal A
+source .venv/bin/activate
+PYTHONPATH=src python -m uvicorn finrag.api:app --host 127.0.0.1 --port 8000
+```
 
-| Question | Qwen output |
-| --- | --- |
-| What was Northstar's operating profit? | €58 million |
-| What dividend per share did Northstar distribute? | INSUFFICIENT_EVIDENCE |
+```bash
+# Terminal B
+cd web
+npm run dev
+```
 
-An explicit CPU check returned `€58 million` for profit but **`0.5434` for the unsupported dividend question**, copying a retrieval score. This passed output validation. Greedy decoding did not produce the same answer across these devices; the MPS abstention example is not a portable guarantee.
+Open `http://127.0.0.1:5183/` and use a single local PDF for Multi-Query mode. The Vite proxy forwards `/api` to the loopback FastAPI server. See [`docs/api.md`](docs/api.md) for the API contract. Model/download dependencies require an initial network connection.
 
-The CLI prints the source chunks and scores separately. The supported answer omitted the requested inline citation. Validation rejects empty or punctuation/citation-only output, invalid citation indices and explicit abstention. Passing validation does **not** establish factual support.
+### Tests and quality checks
 
-During development, one prompt returned only `[1]` for the unsupported question; a stricter prompt then rejected a supported question. The simpler prompt is retained. These manual examples do not demonstrate reliable abstention or hallucination control, and generation has not been evaluated systematically.
+The local integrated tree passed these checks on 20 October 2026:
 
-The extractive baseline returns the highest-ranked chunk, not a synthesized answer. Its optional `--min-score` is only a retrieval cutoff, not an answerability detector; unrelated questions can still receive text.
+| Check | Local result | Scope |
+| --- | --- | --- |
+| `PYTHONPATH=src python -m pytest -q` | **146 passed**, one third-party deprecation warning | Python / API |
+| `ruff check .` | **Passed** | Python lint |
+| `cd web && npm test -- --run` | **9 passed** | Frontend logic |
+| `cd web && npx playwright test --reporter=line` | **17 passed** | Browser/UI flows, primarily mocked HTTP responses |
+| `cd web && npm run build` | **Passed** | Production frontend build |
 
-Word boundaries can split sentences and tables. PDF loading extracts embedded text without OCR, layout reconstruction or page-level citations; scanned PDFs may yield no text, and malformed PDFs can fail parsing. The hand-written relevance labels and tiny corpus limit the evaluation. There is no reranker or persistent index. Real financial reports and independently checked evidence labels would be needed before making broader quality claims.
+The Playwright run is **not** a browser-to-real-Ollama accuracy benchmark. Separately, real local AMD 2022/2021 questions returned the expected revenue figures, and an unsupported FY2040 request produced `insufficient_context`; these are manual cases, not statistical accuracy estimates. Counts should be rerun on the final released commit and checked against CI.
+
+## Limitations and safety
+
+- **Citations are inspectable, not automatically fact-verified.** Their correctness still needs complete checking, including page correspondence, periods, and numeric support.
+- Qwen may abstain despite sufficient retrieved evidence. A non-abstaining answer may still be wrong.
+- Mathematical expressions and financial calculations are **not automatically verified**; P1 deterministic extraction and calculation is not implemented.
+- Retrieval scores are ranking signals, not probabilities of factual correctness. Scores from different methods should not be directly compared as calibrated confidence.
+- PDF extraction can lose table structure and may not work for scans or password-protected documents. No OCR pipeline has been validated for this release.
+- The app is intended for **local, single-user research**. It does not offer a hardened authentication or deployment security model. Do **not** expose its API to the internet.
+- The results above are retrieval evaluations from limited question/report subsets; they do not establish general financial-answer accuracy or production readiness.
+
+## Next steps (not implemented)
+
+1. **P1:** structured extraction of values with period, unit, and source provenance; deterministic Python calculations; validated rendering of numeric results.
+2. Complete citation/page audits and end-to-end answer correctness evaluation.
+3. Add browser-to-real-Ollama integration checks alongside the currently passing mocked-browser suite.
+4. Verify clean-checkout installation, document precise dependency/model versions, and reproduce the holdout metrics from released scripts.
+
+## Release provenance
+
+This document describes the integrated release candidate tested locally on 20 October 2026. **Before advertising it as the GitHub default branch**, publish the corresponding commit, verify GitHub Actions against that SHA, and ensure the installation steps and screenshots refer to that exact code. The older public `main` and the open PDF-upload PR do **not** establish results for the integrated version.
+
+## Data, attribution, and license
+
+**Third-party data:** FinanceBench is developed by Patronus AI. The FinanceBench dataset is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The evaluation manifests and derived results in this repository use FinanceBench annotations and must respect that license. The project's MIT license applies to original FinRAG code, not to third-party datasets, financial reports, or model weights.
+
+
+FinanceBench is an external benchmark by its original authors. This project evaluates against it; it does not claim ownership of its annotations or of companies' annual reports. Before releasing assets, confirm redistribution terms and avoid committing downloaded third-party PDFs unless permitted.
+
+**License:** The original FinRAG code is released under the [MIT License](LICENSE). Third-party datasets, pretrained models, PDF filings, fonts and dependencies retain their own licenses and redistribution conditions.
+
+---
+
+**Project:** [github.com/samugc/FinRAG](https://github.com/samugc/FinRAG)
+
+**Status:** integrated local research application, awaiting publication of the tested release candidate; **not a production financial-advice tool**.

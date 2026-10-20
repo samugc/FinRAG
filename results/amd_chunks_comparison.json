@@ -1,0 +1,71 @@
+{
+  "tfidf": {
+    "positions": [
+      117,
+      12,
+      5,
+      2,
+      7,
+      22,
+      9
+    ],
+    "hit_at_1": 0.0,
+    "hit_at_3": 0.14285714285714285,
+    "hit_at_5": 0.2857142857142857
+  },
+  "minilm": {
+    "positions": [
+      28,
+      2,
+      1,
+      1,
+      4,
+      3,
+      36
+    ],
+    "hit_at_1": 0.2857142857142857,
+    "hit_at_3": 0.5714285714285714,
+    "hit_at_5": 0.7142857142857143
+  },
+  "metadata": {
+    "dataset": "FinanceBench",
+    "document": "AMD_2022_10K",
+    "questions": 7,
+    "question_ids": [
+      "financebench_id_00222",
+      "financebench_id_00995",
+      "financebench_id_01198",
+      "financebench_id_00917",
+      "financebench_id_01279",
+      "financebench_id_00563",
+      "financebench_id_00757"
+    ],
+    "gold_pages": [
+      [
+        55
+      ],
+      [
+        3
+      ],
+      [
+        42
+      ],
+      [
+        42
+      ],
+      [
+        57
+      ],
+      [
+        47
+      ],
+      [
+        11
+      ]
+    ],
+    "chunk_size": 80,
+    "overlap": 15,
+    "chunks": 998,
+    "aggregation": "max chunk similarity per page"
+  }
+}

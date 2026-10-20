@@ -1,43 +1,63 @@
-# HTTP API
+# Local HTTP API and React workspace
 
-The API wraps the same retrieval and generation components used by the CLI.
-It does not change chunking, ranking, or generation evaluation.
+From the repository root, install `python -m pip install -e '.[dev]'`, then run
+`uvicorn finrag.api:app --host 127.0.0.1 --port 8000` (one worker).
+In `web/`, run `npm ci` and `npm run dev`; open http://127.0.0.1:5183.
+Run `npm run build` and `npm run test:e2e` for frontend checks (Playwright Chromium required).
+Ollama must be running with `qwen3:4b-instruct` for generated answers.
 
-From the repository root:
+The corpus defaults to `data/raw` (`FINRAG_CORPUS`). Uploaded PDFs go to
+`.local/uploads` (`FINRAG_UPLOADS`), separate from historical datasets.
+An existing empty corpus is supported. Missing corpus paths return 503.
 
-```bash
-python -m pip install -e ".[dev]"
-python -m pytest -q
-uvicorn finrag.api:app --host 127.0.0.1 --port 8000
+- `GET /health`: availability and document/chunk counts.
+- `GET /documents`: filenames and chunk counts.
+- `POST /documents`: multipart `file`, with `X-FinRAG-Upload: 1`. Requires a
+  simple PDF filename, selectable text, at most 25 MB and 500 pages. Encrypted
+  PDFs and duplicate names are rejected. Indexes refresh after upload.
+- `GET /documents/{source}/file`: registered PDFs only; no traversal or symlink
+  following, inline content with sandbox and nosniff headers.
+- `POST /query`: see `/docs` for the complete typed contract.
+
+Example query body:
+
+```json
+{"question":"What was AMD's quick ratio in FY2022?","source":"AMD_2022_10K.pdf","retriever":"minilm","generator":"qwen","retrieval_mode":"multiquery","max_pages":5,"chunks_per_page":2}
 ```
 
-Open `http://127.0.0.1:8000/docs` for the generated OpenAPI interface.
+Direct retrieval retains TF-IDF/MiniLM, `k` and the extractive score cutoff.
+Multi-Query requires one selected PDF and reuses the existing page-fusion and
+chunk-selection functions. Direct PDF chunks use 25 words/5 overlap per physical
+page; Multi-Query uses 80/15. These are API ingestion settings, not changes to
+historical evaluation scripts or algorithms.
 
-```bash
-curl http://127.0.0.1:8000/health
-curl -X POST http://127.0.0.1:8000/query \
-  -H 'Content-Type: application/json' \
-  -d '{"question":"What was Northstar operating profit?","retriever":"tfidf","generator":"extractive","k":3}'
-```
+Responses contain original `answer`, P0 `status`, `reason`, optional backend
+`error`, `timings`, `period_check`, and ordered `evidence`. Evidence includes
+`citation_id`, document `source`, chunk ID, text, score and nullable zero-based
+`page_index` / one-based physical `page_number`. Plain documents have no invented
+pages. Additional reporting headers have `kind: reporting_context`. React keeps
+these evidence snapshots attached to the original response. `calculation` is
+reserved and always null; P1 is not implemented.
 
-The `/health` response reports document and chunk counts. It returns HTTP 503
-if the configured corpus cannot be loaded. `/query` returns the answer,
-an evidence-status flag, and ranked source chunks with their scores. Pydantic
-rejects malformed query inputs with HTTP 422.
+P0 states are `produced`, `model_abstention`, `invalid_output`, `no_evidence`,
+`backend_error`, plus pipeline `insufficient_context`. A backend generation error
+is a 200 response with that state and the retrieved evidence; malformed requests
+return 422 and unavailable corpus/retrieval services return 503. The legacy
+`sufficient_evidence` boolean means produced/structurally accepted, not factual
+correctness. Extractive production means the score cutoff passed.
 
-The default corpus is `data/raw`. Set `FINRAG_CORPUS` to an alternative path
-before starting the server. Run from the repository root when using relative paths.
+Period checks search complete pages of the selected evidence documents for
+explicit fiscal periods or supported English statement dates, not bare numeric
+amounts. Located headers can be added to model evidence. Missing requested years
+in recognized reporting context yield `insufficient_context`, never a claim that
+the PDF lacks the data. Unknown formats warn without blocking; mixed numeric-date
+headings also warn. This is deliberately limited recognition, not general table
+understanding: abbreviated/localized dates and unusual layouts may remain
+unverified. Availability does not verify amount-to-column alignment, fiscal versus
+calendar-year equivalence, units, arithmetic or citation entailment.
 
-The TF-IDF retriever is the API default. MiniLM and local Qwen are optional
-request selections. Retrievers and the generator are lazy-loaded and cached
-within the process to avoid repeated fitting. The first MiniLM or Qwen query
-may download model files and use substantial time and memory. The API does
-not currently implement parallel GPU inference, persistent indexes, or
-authentication: it is intended for local development. Do not expose it publicly.
-
-**Important:** The extractive response is the highest-ranked chunk, not a
-verified natural-language answer. The sufficient-evidence flag is based
-on the existing cutoff or model output validation; it does not guarantee
-factual support. Source scores from different retrieval methods are not
-necessarily comparable. FinanceBench/RRF research remains separate from
-this API branch.
+This is a local, single-process service without authentication, OCR, persistent
+indexes or hostile-PDF isolation. Bind to loopback. The custom upload header is
+not authentication. Limits apply after multipart parsing; they are not ingress
+quotas. Uploaded documents and query evidence stay local; do not publish logs
+containing private documents. Retrieval scores across methods are not comparable.

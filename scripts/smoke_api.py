@@ -15,7 +15,6 @@ import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-
 QUESTION = "What was Northstar's operating profit in 2025?"
 UNKNOWN = "What dividend per share did Northstar distribute?"
 
@@ -79,7 +78,8 @@ def main() -> int:
                 print(f"\n[{retriever} / {generator}] {elapsed}s")
                 print("Question:", question)
                 print("Answer:", result["answer"])
-                print("Evidence status (not verified):", result["sufficient_evidence"])
+                print("Response state (not fact-verified):", result["status"])
+                print("Reason:", result["reason"])
                 print("Top source:", evidence[0]["source"], "chunk", evidence[0]["chunk_id"])
                 print("Retrieved chunks:", len(evidence))
 

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import ComparePanel from "./ComparePanel.jsx";
+import { statusLabel, citationParts } from "./response.js";
 import {
   ArrowDownRight, ArrowRight, BookOpen, Check, ChevronDown, ChevronRight,
   CircleAlert, CircleCheck, Clock3, Command, Database, FileText, Filter,
   Layers3, LoaderCircle, Menu, MessageSquareText, PanelRightClose,
-  RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, X, Columns2,
+  RotateCcw, Search, Send, Settings2, ShieldCheck, Sparkles, X, Columns2, Upload, ExternalLink,
 } from "lucide-react";
 
 const SAMPLES = [
@@ -33,6 +34,8 @@ export default function App() {
   const [retriever, setRetriever] = useState("tfidf");
   const [generator, setGenerator] = useState("extractive");
   const [k, setK] = useState(3);
+  const [retrievalMode, setRetrievalMode] = useState("direct");
+  const [evidenceAnswer, setEvidenceAnswer] = useState(null);
   const [query, setQuery] = useState("");
   const [entries, setEntries] = useState([]);
   const [working, setWorking] = useState(false);
@@ -41,6 +44,9 @@ export default function App() {
   const [mobilePanel, setMobilePanel] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+  const fileInputRef = useRef(null);
   const abortRef = useRef(null);
   const bottomRef = useRef(null);
 
@@ -70,13 +76,17 @@ export default function App() {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [entries, working]);
 
   const last = [...entries].reverse().find((entry) => entry.type === "answer");
-  const evidence = last?.data?.evidence || [];
+  const inspected = entries.find(entry => entry.id === evidenceAnswer) || last;
+  const evidence = inspected?.data?.evidence || [];
   const visibleEvidence = evidence;
 
   async function ask(text = query) {
     const question = text.trim();
     if (!question || working) return;
     if (!online) { setError("Connect to the local API before asking a question."); return; }
+    if (retrievalMode === "multiquery" && !/\.pdf$/i.test(selectedDoc)) {
+      setError("Select one PDF to use Multi-Query."); return;
+    }
     setWorking(true);
     setError("");
     setEntries((prev) => [...prev, { type: "question", text: question }]);
@@ -89,7 +99,7 @@ export default function App() {
       const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, retriever, generator, k, source: selectedDoc === "all" ? null : selectedDoc }),
+        body: JSON.stringify({ question, retriever, generator, k, retrieval_mode: retrievalMode, source: selectedDoc === "all" ? null : selectedDoc }),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -98,7 +108,9 @@ export default function App() {
         throw new Error(res.status === 503 ? "The model or document corpus is unavailable." : "Query failed (HTTP " + res.status + "). " + (typeof data.detail === "string" ? data.detail : ""));
       }
       const data = await res.json();
-      setEntries((prev) => [...prev, { type: "answer", data, elapsed: (performance.now() - start) / 1000 }]);
+      const id = crypto.randomUUID();
+      setEvidenceAnswer(id);
+      setEntries((prev) => [...prev, { type: "answer", id, data, elapsed: (performance.now() - start) / 1000 }]);
     } catch (err) {
       if (err.name !== "AbortError") {
         setError(localMessage(err));
@@ -108,6 +120,47 @@ export default function App() {
       setWorking(false);
       abortRef.current = null;
     }
+  }
+
+  async function uploadPdf(file) {
+    if (!file || uploading) return;
+    if (!/\.pdf$/i.test(file.name) || file.size > 25 * 1024 * 1024) {
+      setError("Choose a PDF smaller than 25 MB.");
+      return;
+    }
+    setUploading(true);
+    setUploadMessage("");
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const response = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "X-FinRAG-Upload": "1" },
+        body: form,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = typeof data.detail === "string"
+          ? data.detail
+          : "Upload failed (HTTP " + response.status + ").";
+        throw new Error(message);
+      }
+      setSelectedDoc(data.source);
+      setUploadMessage("Added " + data.source + " · " + data.chunks + " chunks");
+      await refresh();
+    } catch (err) {
+      setError(err.message || "Unable to upload PDF.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function inspect(entry, citation = 1) {
+    setEvidenceAnswer(entry.id);
+    setActiveEvidence(entry.data.evidence.findIndex((hit, i) => (hit.citation_id || i + 1) === citation));
+    setMobilePanel("evidence");
   }
 
   const hasStarted = entries.length > 0;
@@ -120,12 +173,23 @@ export default function App() {
           <h1>Ask better questions.<br /><span>Find the evidence.</span></h1>
           <p>Explore financial reports through retrieval-grounded answers. Every response comes with the source material so you can inspect it yourself.</p>
           <div className="suggestions">
-            <div className="suggest-title">TRY ASKING {selectedDoc !== "all" ? "· SELECTED DOCUMENT" : ""}</div>
-            {SAMPLES.map((item) => (
-              <button key={item} className="suggestion" onClick={() => ask(item)}>
-                <span>{item}</span><ArrowRight size={16} />
-              </button>
-            ))}
+            {selectedDoc === "all" ? (
+              <>
+                <div className="suggest-title">TRY ASKING</div>
+                {SAMPLES.map((item) => (
+                  <button key={item} className="suggestion" onClick={() => ask(item)}>
+                    <span>{item}</span><ArrowRight size={16} />
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                <div className="suggest-title">SELECTED DOCUMENT · {labelName(selectedDoc)}</div>
+                <p className="selected-document-hint">
+                  Ask a question about this report. Retrieval is restricted to the selected document.
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -139,14 +203,22 @@ export default function App() {
             <div className="message-answer" key={index}>
               <div className="assistant-mark"><Sparkles size={16}/></div>
               <div className="answer-content">
-                <div className="answer-head"><b>FinRAG</b><span>{entry.data.retriever.toUpperCase()} · {entry.data.generator === "extractive" ? "Extractive" : "Qwen"}</span></div>
-                <div className="answer-text">{entry.data.answer}</div>
+                <div className="answer-head"><b>FinRAG</b><span>{(entry.data.retriever || "unknown").toUpperCase()} · {entry.data.generator === "extractive" ? "Extractive" : entry.data.generator === "qwen" ? "Qwen" : "Unknown"}</span></div>
+                <div className="answer-text">{citationParts(entry.data.answer).map((part, i) => part.ids.length ? (
+                  <span key={i}>{part.ids.map(id => <button key={id} className="citation-link"
+                    aria-label={"Inspect citation " + id}
+                    disabled={!entry.data.evidence.some((hit, j) => (hit.citation_id || j + 1) === id)}
+                    onClick={() => inspect(entry, id)}>[{id}]</button>)}</span>
+                ) : <span key={i}>{part.text}</span>)}</div>
+                {entry.data.reason && <p className="period-warning">{entry.data.reason}</p>}
+                {entry.data.error && <div role="alert">{entry.data.error}</div>}
+                {entry.data.period_check?.warnings?.map(warning => <p className="period-warning" key={warning}>{warning}</p>)}
                 <div className="answer-footer">
                   <span className={entry.data.sufficient_evidence ? "grounding caution" : "grounding insufficient"}>
                     {entry.data.sufficient_evidence ? <CircleCheck size={14}/> : <CircleAlert size={14}/>}
-                    {entry.data.sufficient_evidence ? "Evidence retrieved · not fact-verified" : "Insufficient evidence"}
+                    {statusLabel(entry.data)}
                   </span>
-                  <button className="source-link" onClick={() => { setMobilePanel("evidence"); setActiveEvidence(0); }}>
+                  <button className="source-link" onClick={() => inspect(entry)}>
                     <BookOpen size={14}/> {entry.data.evidence.length} sources <ArrowRight size={13}/>
                   </button>
                   <span className="time"><Clock3 size={13}/> {entry.elapsed.toFixed(1)}s</span>
@@ -175,11 +247,24 @@ export default function App() {
             <Database size={17}/><span>All documents</span>
           </button>
           {documents.map((doc) => (
-            <button className={"document-item " + (selectedDoc === doc.source ? "doc-selected" : "")} key={doc.source} onClick={() => { setSelectedDoc(doc.source); setMobilePanel(""); }}>
-              <FileText size={17}/><span title={doc.source}>{labelName(doc.source)}</span>
-            </button>
+            <div className="document-entry" key={doc.source}>
+              <button className={"document-item " + (selectedDoc === doc.source ? "doc-selected" : "")} onClick={() => { setSelectedDoc(doc.source); setMobilePanel(""); }}>
+                <FileText size={17}/><span title={doc.source}>{labelName(doc.source)}</span>
+              </button>
+              {/\.pdf$/i.test(doc.source) && (
+                <a className="pdf-open" aria-label={"Open " + doc.source + " PDF"} title="Open original PDF" href={"/api/documents/" + encodeURIComponent(doc.source) + "/file"} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink size={15}/>
+                </a>
+              )}
+            </div>
           ))}
           {!documents.length && !loadingSetup && <div className="doc-empty">No documents available</div>}
+          <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" aria-label="Select a PDF document" className="pdf-file-input" onChange={(e) => uploadPdf(e.target.files?.[0])} />
+          <button className="upload-document" onClick={() => fileInputRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); uploadPdf(e.dataTransfer.files?.[0]); }} disabled={uploading || working || !online} title="Click or drop a PDF file here">
+            {uploading ? <LoaderCircle size={16} className="spin"/> : <Upload size={16}/>}
+            {uploading ? "Adding PDF…" : "Upload or drop PDF"}
+          </button>
+          {uploadMessage && <div className="upload-message" role="status">{uploadMessage}</div>}
           <div className="sidebar-note"><ShieldCheck size={17}/><div><b>Local-first research</b><span>Documents stay on your machine. No paid API required.</span></div></div>
         </div>
         <div className="sidebar-bottom"><span className="avatar">FR</span><div><b>FinRAG Workspace</b><span>Research environment</span></div><Settings2 size={17}/></div>
@@ -206,12 +291,16 @@ export default function App() {
             <div className="composer-actions">
               <div className="options">
                 <label className="model-select"><Search size={15}/><select aria-label="Retriever" value={retriever} onChange={(e) => setRetriever(e.target.value)}><option value="tfidf">TF-IDF</option><option value="minilm">MiniLM</option></select><ChevronDown size={12}/></label>
+                <label className="model-select"><select aria-label="Retrieval mode" value={retrievalMode} onChange={e => setRetrievalMode(e.target.value)}>
+                  <option value="direct">Direct top-k</option><option value="multiquery">Multi-Query · selected PDF</option>
+                </select></label>
                 <label className="model-select generator"><Sparkles size={15}/><select aria-label="Generator" value={generator} onChange={(e) => setGenerator(e.target.value)}><option value="extractive">Extractive</option><option value="qwen">Qwen local</option></select><ChevronDown size={12}/></label>
                 <button type="button" className={"setting-toggle " + (settingsOpen ? "setting-on" : "")} onClick={() => setSettingsOpen(!settingsOpen)}><Filter size={15}/> Settings</button>
               </div>
               <button aria-label="Send question" className="send-btn" type="submit" disabled={!query.trim() || working || !online}>{working ? <LoaderCircle className="spin" size={19}/> : <ArrowRight size={19}/>}</button>
             </div>
-            {settingsOpen && <div className="settings-row"><label>Evidence chunks <b>{k}</b></label><input aria-label="Evidence chunks" type="range" min="1" max="10" value={k} onChange={(e)=>setK(Number(e.target.value))}/><span>Top {k}</span></div>}
+            {retrievalMode === "multiquery" && <p>Multi-Query: 5 pages × 2 chunks; direct top-k setting is not used.</p>}
+            {settingsOpen && retrievalMode === "direct" && <div className="settings-row"><label>Evidence chunks <b>{k}</b></label><input aria-label="Evidence chunks" type="range" min="1" max="10" value={k} onChange={(e)=>setK(Number(e.target.value))}/><span>Top {k}</span></div>}
           </form>
           <div className="composer-footnote">AI-generated answers can be incorrect. Always verify against the cited source text.</div>
         </div>
@@ -225,14 +314,17 @@ export default function App() {
             <div className="evidence-placeholder"><div className="evidence-placeholder-icon"><FileText size={23}/></div><b>Your sources appear here</b><p>Ask a question to explore retrieved passages, relevance scores, and document origins.</p></div>
           ) : (
             <>
-              {selectedDoc !== "all" && <div className="filter-note"><Filter size={13}/> Scoped to {labelName(selectedDoc)} <button onClick={() => setSelectedDoc("all")}>Clear</button></div>}
+              <div className="filter-note">Evidence for: {inspected?.data?.question}</div>
+              {inspected?.data?.source && <div className="filter-note">Scoped to {labelName(inspected.data.source)}</div>}
               {visibleEvidence.map((hit, idx) => (
-                <button key={hit.source + hit.chunk_id + idx} className={"evidence-card " + (activeEvidence === idx ? "active-evidence" : "")} onClick={() => setActiveEvidence(idx)}>
-                  <div className="evidence-card-top"><div className="file-badge"><FileText size={16}/></div><div className="file-head"><b>{labelName(hit.source)}</b><span>Chunk {hit.chunk_id} · Rank {evidence.indexOf(hit) + 1}</span></div><ChevronRight size={15}/></div>
+                <div key={hit.source + hit.chunk_id + idx}><button key={hit.source + hit.chunk_id + idx} className={"evidence-card " + (activeEvidence === idx ? "active-evidence" : "")} onClick={() => setActiveEvidence(idx)}>
+                  <div className="evidence-card-top"><div className="file-badge"><FileText size={16}/></div><div className="file-head"><b>{labelName(hit.source)}</b><span>{hit.kind === "reporting_context" ? "Reporting header" : "Chunk " + hit.chunk_id} · Citation {hit.citation_id || idx + 1}{hit.page_number != null ? " · PDF page " + hit.page_number : ""}</span></div><ChevronRight size={15}/></div>
                   <p>{activeEvidence === idx ? hit.text : shortText(hit.text)}</p>
                   <div className="evidence-card-bottom"><span><span className="score-dot"/> Relevance score</span><b>{Number(hit.score).toFixed(3)}</b></div>
                   <div className="score-track"><div style={{width: Math.min(100, Math.max(0, Number(hit.score) * 100)) + "%"}}/></div>
                 </button>
+                {hit.page_number != null && /\.pdf$/i.test(hit.source) && <a href={"/api/documents/" + encodeURIComponent(hit.source) + "/file#page=" + hit.page_number} target="_blank" rel="noopener noreferrer">Open PDF page {hit.page_number}</a>}
+                </div>
               ))}
               {!visibleEvidence.length && <div className="doc-empty">No retrieved sources match this document filter.</div>}
             </>

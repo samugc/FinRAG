@@ -8,7 +8,7 @@ const RETRIEVERS = [
 ];
 
 function keyOf(hit) {
-  return JSON.stringify([hit.source, hit.chunk_id]);
+  return JSON.stringify([hit.source, hit.page_index ?? null, hit.chunk_id]);
 }
 
 function SourceCard({ hit, rank, shared }) {
@@ -16,7 +16,7 @@ function SourceCard({ hit, rank, shared }) {
     <div className="compare-source">
       <div className="compare-source-head">
         <span className="compare-rank">#{rank}</span>
-        <span className="compare-source-name"><FileText size={14} /> {hit.source} · chunk {hit.chunk_id}</span>
+        <span className="compare-source-name"><FileText size={14} /> {hit.source} · chunk {hit.chunk_id}{hit.page_number != null ? " · PDF page " + hit.page_number : ""}</span>
         {shared && <span className="compare-overlap">Both</span>}
       </div>
       <p>{hit.text}</p>
