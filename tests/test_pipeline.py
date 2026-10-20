@@ -77,3 +77,15 @@ def test_missing_requested_year_abstains_before_qwen(tmp_path):
     supported = pipeline.query("What was AMD net revenue in 2022?", generator="extractive")
     assert supported.sufficient_evidence
     assert "23.6 billion" in supported.answer
+
+
+def test_explicit_year_comparison_requires_both_years(tmp_path):
+    (tmp_path / "report.txt").write_text(
+        "Revenue for 2022 was $23.6 billion, compared with $16.4 billion in 2021.",
+        encoding="utf-8",
+    )
+    pipeline = FinRAGPipeline(tmp_path)
+    assert pipeline.query("Compare 2022 with 2021 revenue.").sufficient_evidence
+    missing = pipeline.query("Compare 2022 with 2040 revenue.")
+    assert missing.answer == "INSUFFICIENT_EVIDENCE"
+    assert missing.sufficient_evidence is False
