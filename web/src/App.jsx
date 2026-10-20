@@ -158,12 +158,23 @@ export default function App() {
           <h1>Ask better questions.<br /><span>Find the evidence.</span></h1>
           <p>Explore financial reports through retrieval-grounded answers. Every response comes with the source material so you can inspect it yourself.</p>
           <div className="suggestions">
-            <div className="suggest-title">TRY ASKING {selectedDoc !== "all" ? "· SELECTED DOCUMENT" : ""}</div>
-            {SAMPLES.map((item) => (
-              <button key={item} className="suggestion" onClick={() => ask(item)}>
-                <span>{item}</span><ArrowRight size={16} />
-              </button>
-            ))}
+            {selectedDoc === "all" ? (
+              <>
+                <div className="suggest-title">TRY ASKING</div>
+                {SAMPLES.map((item) => (
+                  <button key={item} className="suggestion" onClick={() => ask(item)}>
+                    <span>{item}</span><ArrowRight size={16} />
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                <div className="suggest-title">SELECTED DOCUMENT · {labelName(selectedDoc)}</div>
+                <p className="selected-document-hint">
+                  Ask a question about this report. Retrieval is restricted to the selected document.
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
