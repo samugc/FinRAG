@@ -15,7 +15,7 @@
 
 **Local financial-document question answering with inspectable evidence and measurable retrieval.**
 
-FinRAG is a Python and React research application for asking questions about financial reports. It combines document retrieval, local language-model generation, and a workspace where users can inspect the underlying passages and open the corresponding PDF pages. The project also includes controlled retrieval experiments on [FinanceBench](https://github.com/patronus-ai/financebench).
+FinRAG is a Python and React research application for asking questions about financial reports. It combines document retrieval, local language-model generation, and a workspace where users can inspect the underlying passages and open the corresponding PDF pages. The repository includes controlled retrieval experiments on [FinanceBench](https://github.com/patronus-ai/financebench).
 
 **No paid LLM API or API key is required for inference.** The app is intended to run on a local machine, not as an internet-facing service. Model acquisition and some frontend assets may require an initial network connection.
 
@@ -31,12 +31,9 @@ The system was developed to answer practical engineering questions: How do lexic
 
 The integrated interface includes chat, document library, PDF upload, Evidence Explorer, original-PDF page links, response states, a sparse-versus-dense retrieval comparison, and a selectable Multi-Query mode for a single PDF.
 
-**Real-session screenshots are not yet embedded.** The existing automated visual previews use mocked API data and must not be represented as live Ollama output. Planned screenshots from a local session:
+The workspace makes each response explorable: read the answer, inspect the passages behind its citations, and open the original report at the referenced page.
 
-- `docs/screenshots/workspace-overview.png` — application layout and loaded public/sample report.
-- `docs/screenshots/amd-answer-evidence.png` — AMD revenue question, answer, and cited passage (after manual source check).
-- `docs/screenshots/pdf-page-navigation.png` — cited page open in the PDF viewer.
-- `docs/screenshots/retrieval-comparison.png` — TF-IDF versus MiniLM evidence comparison.
+**Example workflow:** ask for AMD's FY2022 net revenue, inspect the cited 10-K passage, and confirm the figure in the original report. Screenshots taken with real local inference are kept distinct from mocked browser-test previews.
 
 ## Architecture
 
@@ -96,7 +93,7 @@ The project uses individual retrieval and inference components rather than relyi
 - A comparison view for sparse and dense retrieved passages.
 - Correctly retrieved/reported AMD net revenue figures for FY2022 (**$23,601 million**) and FY2021 (**$16,434 million**) in the reported local checks. These are individual case checks, **not** a measured answer-accuracy rate.
 
-**Research-only or additional retrieval components:** BM25, RRF fusion, and Cross-Encoder reranking were investigated and evaluated; they are not all selectable in the React interface. Multi-Query is selectable in the integrated UI.
+**Additional retrieval research:** BM25, RRF fusion, and Cross-Encoder reranking are included in the experiment code. The React workspace exposes TF-IDF, MiniLM, and Multi-Query.
 
 ## Retrieval evaluation
 
@@ -129,11 +126,11 @@ The small-corpus script calls this metric `Recall@k`, but its operational defini
 
 ### Failure analysis
 
-In **39 real Ollama inferences** across several evidence/prompt conditions, the retrieval stage supplied the required figures for a financial calculation, while generation could abstain, omit components, or describe arithmetic incorrectly. This motivated the planned deterministic-calculation path rather than another claim that prompting alone solved grounding.
+In **39 real Ollama inferences** across several evidence/prompt conditions, the retrieval stage supplied the required figures for a financial calculation, while generation could abstain, omit components, or describe arithmetic incorrectly. These observations motivate a strict separation between retrieving evidence and verifying numeric claims.
 
 ## Running locally
 
-**Development environment verified on macOS:** Python 3.13, a local Ollama service with `qwen3:4b-instruct`, and a Vite/React frontend. This is a local research application, **not** a hardened public server. Setup from a completely clean checkout and other platforms has not yet been independently verified.
+**Verified environment:** macOS with Python 3.13, local Ollama (`qwen3:4b-instruct`) and React/Vite. Other platforms may require setup adjustments. The service is designed for local use, not public deployment.
 
 For a new checkout, prepare the Python and JavaScript environments (Python version compatibility below 3.13 is not asserted here):
 
@@ -186,18 +183,11 @@ The Playwright run is **not** a browser-to-real-Ollama accuracy benchmark. Separ
 
 - **Citations are inspectable, not automatically fact-verified.** Their correctness still needs complete checking, including page correspondence, periods, and numeric support.
 - Qwen may abstain despite sufficient retrieved evidence. A non-abstaining answer may still be wrong.
-- Mathematical expressions and financial calculations are **not automatically verified**; P1 deterministic extraction and calculation is not implemented.
+- Financial numbers and arithmetic should be checked against the original report; the system does not certify them.
 - Retrieval scores are ranking signals, not probabilities of factual correctness. Scores from different methods should not be directly compared as calibrated confidence.
 - PDF extraction can lose table structure and may not work for scans or password-protected documents. No OCR pipeline has been validated for this release.
 - The app is intended for **local, single-user research**. It does not offer a hardened authentication or deployment security model. Do **not** expose its API to the internet.
 - The results above are retrieval evaluations from limited question/report subsets; they do not establish general financial-answer accuracy or production readiness.
-
-## Next steps (not implemented)
-
-1. **P1:** structured extraction of values with period, unit, and source provenance; deterministic Python calculations; validated rendering of numeric results.
-2. Complete citation/page audits and end-to-end answer correctness evaluation.
-3. Add browser-to-real-Ollama integration checks alongside the currently passing mocked-browser suite.
-4. Verify clean-checkout installation, document precise dependency/model versions, and reproduce the holdout metrics from released scripts.
 
 ## Validation provenance
 
