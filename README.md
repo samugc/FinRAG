@@ -96,6 +96,9 @@ These results come from separate pilot and holdout research evaluations. They me
 | Pilot | 28 | 6 | 46.4% | 53.6% |
 | Holdout | 34 | 10 | 20.6% | 26.5% |
 
+![FinanceBench all-evidence Hit@5: Pilot MiniLM 46.4%, Multi-Query 53.6%; Holdout MiniLM 20.6%, Multi-Query 26.5%. This measures evidence coverage, not answer accuracy.](docs/figures/financebench-hit5.svg)
+
+
 **All-evidence Hit@5** is the fraction of questions for which **every annotated supporting page** occurs within the five highest-ranked distinct pages for the relevant report. It is stricter than finding at least one supporting page. It does not assess whether the generator used the pages correctly or produced the right number.
 
 The lower holdout scores are material. They show that evidence recovery is far from solved and that pilot improvements should not be presented as broad reliability claims. To describe these results as independently reproducible, publish the corresponding experiment settings, document manifest, evaluation commands, and permitted artifacts; downloaded reports need not be redistributed.
