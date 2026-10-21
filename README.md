@@ -35,6 +35,12 @@ The workspace makes each response explorable: read the answer, inspect the passa
 
 **Example workflow:** ask for AMD's FY2022 net revenue, inspect the cited 10-K passage, and confirm the figure in the original report. Screenshots taken with real local inference are kept distinct from mocked browser-test previews.
 
+### FinRAG in action
+
+![FinRAG answering an AMD FY2022 revenue question with source evidence from PDF page 48](docs/screenshots/amd-answer-evidence.webp)
+
+*Local Qwen inference with inspectable evidence. The financial figure was manually checked against the report; answers are not automatically fact-verified.*
+
 ## Architecture
 
 ```text
