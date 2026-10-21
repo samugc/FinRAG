@@ -1,5 +1,18 @@
 # FinRAG
 
+<p align="center"><img src="docs/figures/finrag-banner.svg" alt="FinRAG: local financial research with inspectable evidence" width="100%"></p>
+
+<p align="center">
+  <strong>Financial PDFs → retrieval → inspectable evidence → local generation</strong>
+</p>
+
+<p align="center">
+  <a href="#workspace">Workspace</a> ·
+  <a href="#retrieval-evaluation">Evaluation</a> ·
+  <a href="#running-locally">Run locally</a> ·
+  <a href="#limitations-and-safety">Limitations</a>
+</p>
+
 **Local financial-document question answering with inspectable evidence and measurable retrieval.**
 
 FinRAG is a Python and React research application for asking questions about financial reports. It combines document retrieval, local language-model generation, and a workspace where users can inspect the underlying passages and open the corresponding PDF pages. The project also includes controlled retrieval experiments on [FinanceBench](https://github.com/patronus-ai/financebench).
