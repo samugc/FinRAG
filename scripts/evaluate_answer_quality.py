@@ -65,5 +65,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-PY
-chmod +x /Users/samu/Desktop/FinRAG-eval-engine/scripts/evaluate_answer_quality.py
