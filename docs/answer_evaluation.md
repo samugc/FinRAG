@@ -11,7 +11,7 @@ future evaluator owned by FINRAG 03.
 | --- | --- |
 | `data/eval/answer_golden_v1.json` | Versioned synthetic gold questions, expected decisions, required evidence |
 | `tests/fixtures/answer_eval/traces.jsonl` | 16 simulated answer traces |
-| `tests/fixtures/answer_eval/assessments.jsonl` | 14 human/fixture semantic assessments |
+| `tests/fixtures/answer_eval/assessments.jsonl` | 14 fixture-authored semantic assessments |
 | `tests/fixtures/answer_eval/expected_cases.json` | Per-case attribution and metric assertions |
 | `data/raw/*.txt` | Synthetic source corpus used by all quotes and hashes |
 
@@ -54,6 +54,12 @@ Gold file SHA-256: `b1640875d4333adcf0cfe386a823faf370bb3dc663de505ca6a531acfa7c
   from the exact trace text.
 - `candidate_evidence` is either `null` or an ordered list of
   `{document_id, chunk_id, page_index}`.
+- Source identity: gold `corpus[].source` values are repository-relative paths
+  (`data/raw/...txt`) and are used for hash verification. Trace `config.source`
+  and evidence `source` values are filenames (`...txt`), matching production
+  `Document.source`. `document_id` is the stable identity used to join gold,
+  traces, and assessments; source strings are provenance/display metadata and
+  need not be byte-identical.
 - Simulated fixture traces use `run_id = fixture-answer-eval-v1` and
   `baseline.git_commit = 522255530a80463ee4fce9cf4f77d9b646d805c9`,
   `baseline.git_dirty = false`.
@@ -92,9 +98,11 @@ measured inference. They were authored to exercise specific pipeline failure
 modes. They must not be reported as model performance, latency, throughput, or
 accuracy. No Ollama inference, network download, or new dependency was used to
 create them. Aggregate metric values are intentionally not copied from any
-illustrative document; only per-case oracles are provided.
+illustrative document; only per-case oracles are provided. Status values in the
+matrix are structural classifications of simulated fixture traces, not observed
+Ollama outputs.
 
-## Sixteen-case coverage matrix
+## Sixteen-case coverage matrix (simulated fixtures)
 
 | question_id | source | trace status | context | decision | correctness | expected primary | scenario |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -115,7 +123,8 @@ illustrative document; only per-case oracles are provided.
 | `syn-unans-tax-rate` | cash_flow | backend_error | n/a | n/a | n/a | backend | backend failure, no assessment |
 | `syn-unans-offices` | sample_report | produced | n/a | n/a | n/a | unknown | produced answer, no assessment (exercises `unknown`) |
 
-Counts: 8 `produced`, 4 `model_abstention`, 3 `invalid_output`, 1 `backend_error`.
+Counts (simulated traces): 7 `produced`, 5 `model_abstention`,
+3 `invalid_output`, 1 `backend_error`.
 Assessments: 14 (all except `syn-unans-tax-rate` and `syn-unans-offices`).
 
 ### Diagnostic case (`syn-revenue-growth-2026`)
@@ -150,7 +159,8 @@ python scripts/evaluate_answer_quality.py \
   --gold data/eval/answer_golden_v1.json \
   --traces tests/fixtures/answer_eval/traces.jsonl \
   --assessments tests/fixtures/answer_eval/assessments.jsonl \
-  --out results/answer_eval/fixture
+  --out results/answer_eval/report.json
 ```
 
 The evaluator is not part of this worktree's ownership and is not included here.
+Its canonical CLI output file is `report.json`.
