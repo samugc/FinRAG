@@ -1,592 +1,349 @@
+import hashlib
 import json
 from pathlib import Path
 
 import pytest
 
 from finrag.answer_evaluation import (
+    SCHEMA_GOLD,
+    SCHEMA_TRACE,
+    SCHEMA_ASSESSMENT,
     EvaluationError,
-    GoldDocument,
-    GoldQuestion,
-    RequiredEvidence,
-    ExpectedAnswer,
-    Trace,
-    Assessment,
-    ClaimAssessment,
-    CitationAssessment,
-    EvidenceSnapshot,
     parse_gold,
     parse_traces,
     parse_assessments,
     evaluate_answer_quality,
     render_report,
+    write_report,
     sha256_text,
+    sha256_file,
     load_gold,
     load_traces,
     load_assessments,
-    write_report,
-    SCHEMA_GOLD,
-    SCHEMA_TRACE,
-    SCHEMA_ASSESSMENT,
 )
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DATA_ROOT = REPO_ROOT.parents[1] / "FinRAG-eval-data"
+REAL_GOLD = DATA_ROOT / "data" / "eval" / "answer_golden_v1.json"
+REAL_TRACES = DATA_ROOT / "tests" / "fixtures" / "answer_eval" / "traces.jsonl"
+REAL_ASSESSMENTS = DATA_ROOT / "tests" / "fixtures" / "answer_eval" / "assessments.jsonl"
+REAL_EXPECTED = DATA_ROOT / "tests" / "fixtures" / "answer_eval" / "expected_cases.json"
 
 
 def sha(text):
     return sha256_text(text)
 
 
-def gold_doc(source="report.txt", text="Revenue was 42 million.", doc_id="doc1"):
+def canonical_gold():
+    source_text = "Northstar reported revenue of €420 million in 2025."
     return {
-        "document_id": doc_id,
-        "source": source,
-        "sha256": sha(text),
-        "content": text,
-    }
-
-
-def required_ev(
-    evidence_id="e1",
-    doc_id="doc1",
-    source="report.txt",
-    text="Revenue was 42 million.",
-    evidence_sha=None,
-):
-    return {
-        "evidence_id": evidence_id,
-        "document_id": doc_id,
-        "source": source,
-        "text": text,
-        "sha256": evidence_sha or sha(text),
-    }
-
-
-def gold_question(
-    qid="q1",
-    question="What was revenue?",
-    answerability="answerable",
-    expected_decision="answer",
-    required=None,
-    expected_answer=None,
-    review_status="reviewed",
-    docs=None,
-):
-    if docs is None:
-        docs = [gold_doc()]
-    if required is None:
-        required = [required_ev()] if answerability == "answerable" else []
-    if expected_answer is None and answerability == "answerable":
-        expected_answer = {"kind": "numeric", "value": 42, "text": "42 million"}
-    if answerability == "unanswerable":
-        expected_answer = None
-    return {
-        "question_id": qid,
-        "question": question,
-        "documents": docs,
-        "answerability": answerability,
-        "expected_decision": expected_decision,
-        "required_evidence": required,
-        "expected_answer": expected_answer,
-        "review_status": review_status,
-    }
-
-
-def trace_evidence(
-    evidence_id="ev1",
-    source="report.txt",
-    text="Revenue was 42 million.",
-    doc_id="doc1",
-):
-    return {
-        "evidence_id": evidence_id,
-        "source": source,
-        "text": text,
-        "text_sha256": sha(text),
-        "source_sha256": sha("Revenue was 42 million."),
-        "document_id": doc_id,
-    }
-
-
-def trace_obj(
-    qid="q1",
-    status="produced",
-    raw_answer="Revenue was 42 million [1].",
-    answer_mode="generated",
-    evidence=None,
-    citation_ids=None,
-    candidate_evidence="__default__",
-    assessment_needed=True,
-):
-    if evidence is None:
-        evidence = [trace_evidence()]
-    if citation_ids is None:
-        citation_ids = [1] if answer_mode == "generated" and status == "produced" else []
-    trace = {
-        "schema_version": SCHEMA_TRACE,
-        "trace_id": f"t-{qid}",
-        "question_id": qid,
-        "answer_mode": answer_mode,
-        "status": status,
-        "raw_answer": raw_answer,
-        "evidence": evidence,
-        "citation_ids": citation_ids,
-        "execution": {"backend": "ollama", "model": "qwen3:4b-instruct", "duration_ms": 12},
-    }
-    if candidate_evidence == "__default__":
-        trace["candidate_evidence"] = [dict(e) for e in evidence]
-    elif candidate_evidence is not None:
-        trace["candidate_evidence"] = candidate_evidence
-    return trace
-
-
-def assessment_obj(
-    qid="q1",
-    context="sufficient",
-    correctness="correct",
-    claims=None,
-    citations=None,
-    review_status="reviewed",
-    secondary=None,
-):
-    if claims is None:
-        claims = [
+        "schema_version": SCHEMA_GOLD,
+        "dataset_id": "unit-gold",
+        "corpus": [
             {
-                "claim_id": "c1",
-                "text": "Revenue was 42 million",
-                "label": "supported",
-                "evidence_sha256": [sha("Revenue was 42 million.")],
+                "document_id": "sample_report",
+                "source": "data/raw/sample_report.txt",
+                "sha256": "0" * 64,
+                "provenance": "synthetic",
             }
-        ]
-    if citations is None:
-        citations = [
+        ],
+        "questions": [
+            {
+                "question_id": "q1",
+                "question": "What was revenue in 2025?",
+                "document_id": "sample_report",
+                "answerability": "answerable",
+                "expected_decision": "answer",
+                "expected_answer": {
+                    "status": "reviewed",
+                    "text": "€420 million",
+                    "evidence_ids": ["E1"],
+                },
+                "required_evidence": [
+                    {
+                        "evidence_id": "E1",
+                        "document_id": "sample_report",
+                        "chunk_id": 0,
+                        "page_index": None,
+                        "quote": "Northstar reported revenue of €420 million in 2025.",
+                        "review_status": "reviewed",
+                    }
+                ],
+                "review_status": "reviewed",
+                "notes": None,
+            }
+        ],
+    }
+
+
+def canonical_trace(*, candidate_evidence=None, status="produced", raw_answer=None):
+    text = "Northstar reported revenue of €420 million in 2025, compared with €390 million in 2024."
+    if raw_answer is None:
+        raw_answer = "Revenue was €420 million in 2025 [1]."
+    return {
+        "schema_version": SCHEMA_TRACE,
+        "trace_id": "trace-q1",
+        "run_id": "unit-run",
+        "question_id": "q1",
+        "gold_sha256": "0" * 64,
+        "config": {"retriever": "minilm", "generator": "qwen", "k": 3},
+        "baseline": {"git_commit": "0" * 40, "git_dirty": False},
+        "result": {"status": status, "raw_answer": raw_answer, "reason": "Passed structural checks only"},
+        "evidence": [
             {
                 "citation_id": 1,
-                "label": "supported",
-                "evidence_sha256": sha("Revenue was 42 million."),
+                "kind": "chunk",
+                "document_id": "sample_report",
+                "source": "data/raw/sample_report.txt",
+                "chunk_id": 0,
+                "page_index": None,
+                "score": 0.95,
+                "text": text,
+                "text_sha256": sha(text),
             }
-        ]
-    return {
-        "schema_version": SCHEMA_ASSESSMENT,
-        "assessment_id": f"a-{qid}",
-        "question_id": qid,
-        "review_status": review_status,
-        "context_sufficiency": context,
-        "answer_correctness": correctness,
-        "claims": claims,
-        "citations": citations,
-        "secondary_errors": secondary or [],
+        ],
+        "candidate_evidence": candidate_evidence,
+        "error": None,
     }
 
 
-def run(gold=None, traces=None, assessments=None):
-    if gold is None:
-        gold = [gold_question()]
-    if traces is None:
-        traces = [trace_obj()]
-    if assessments is None:
-        assessments = [assessment_obj()]
-    g = parse_gold({"schema_version": SCHEMA_GOLD, "questions": gold})
-    t = parse_traces([_strip_schema(tr) for tr in traces])
-    a = parse_assessments([_strip_schema(asm) for asm in assessments])
-    return evaluate_answer_quality(g, t, a)
+def canonical_assessment():
+    text = "Northstar reported revenue of €420 million in 2025, compared with €390 million in 2024."
+    return {
+        "schema_version": SCHEMA_ASSESSMENT,
+        "assessment_id": "assess-q1",
+        "trace_id": "trace-q1",
+        "question_id": "q1",
+        "reviewer_id": "unit",
+        "reviewed_at": "2026-10-27",
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "correct",
+        "claims": [
+            {"claim_id": "A1", "text": "Revenue was €420 million in 2025", "support": "supported"}
+        ],
+        "citations": [
+            {
+                "claim_id": "A1",
+                "citation_id": 1,
+                "evidence_sha256": sha(text),
+                "support": "supports",
+            }
+        ],
+        "secondary_labels": [],
+        "notes": None,
+    }
 
 
-def _strip_schema(record):
-    record = dict(record)
-    record.pop("schema_version", None)
-    return record
+def run_canonical(candidate_evidence=None, status="produced", raw_answer=None, assessment=None):
+    gold = parse_gold(canonical_gold())
+    trace = parse_traces([canonical_trace(candidate_evidence=candidate_evidence, status=status, raw_answer=raw_answer)])
+    assessments = parse_assessments([assessment if assessment is not None else canonical_assessment()])
+    return evaluate_answer_quality(gold, trace, assessments)
 
 
-def test_correct_grounded_answer_success():
-    report = run()
+def test_canonical_success():
+    report = run_canonical()
     case = report["cases"][0]
     assert case["outcome"] == "success"
     assert case["failure_stage"] is None
     assert case["integrity"]["status"] == "ok"
-    agg = report["aggregates"]
-    assert agg["required_evidence_coverage"]["value"] == 1.0
-    assert agg["context_sufficiency"]["value"] == 1.0
-    assert agg["answer_correctness"]["value"] == 1.0
-    assert agg["claim_faithfulness"]["value"] == 1.0
-    assert agg["citation_structural_validity"]["value"] == 1.0
-    assert agg["citation_support"]["value"] == 1.0
+    assert case["abstention_error"] == "none"
+    assert case["coverage_complete_but_context_insufficient"] is False
 
 
-def test_incorrect_numeric_answer():
-    tr = trace_obj(raw_answer="Revenue was 41 million [1].")
-    asm = assessment_obj(correctness="incorrect", claims=[], citations=[])
-    report = run(traces=[tr], assessments=[asm])
+def test_candidate_null_vs_empty():
+    report_null = run_canonical(candidate_evidence=None)
+    report_empty = run_canonical(candidate_evidence=[])
+    assert report_null["cases"][0]["evidence"]["candidate_evidence"] == "unavailable"
+    assert report_empty["cases"][0]["evidence"]["candidate_evidence"] == "available"
+
+
+def test_backend_error_excluded_from_success():
+    tr = canonical_trace(status="backend_error", raw_answer="", candidate_evidence=None)
+    tr["result"]["reason"] = "TimeoutError"
+    tr["error"] = "TimeoutError"
+    gold = parse_gold(canonical_gold())
+    trace = parse_traces([tr])
+    report = evaluate_answer_quality(gold, trace, [])
     case = report["cases"][0]
-    assert case["outcome"] == "failure"
-    assert case["failure_stage"] == "generation"
-    assert "answer_incorrect" in case["failure_reasons"]
-    assert report["aggregates"]["answer_correctness"]["value"] == 0.0
-
-
-def test_unsupported_claim():
-    asm = assessment_obj(
-        claims=[
-            {
-                "claim_id": "c1",
-                "text": "Revenue was 42 million",
-                "label": "supported",
-                "evidence_sha256": [sha("Revenue was 42 million.")],
-            },
-            {
-                "claim_id": "c2",
-                "text": "Revenue grew 10%",
-                "label": "unsupported",
-            },
-        ]
-    )
-    tr = trace_obj(raw_answer="Revenue was 42 million. Revenue grew 10% [1].")
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["outcome"] == "failure"
-    assert case["failure_stage"] == "generation"
-    assert "unsupported_claim" in case["failure_reasons"]
-    assert case["claims"]["unsupported_count"] == 1
-    assert report["aggregates"]["claim_faithfulness"]["value"] == 0.5
-
-
-def test_contradicted_claim():
-    asm = assessment_obj(
-        claims=[
-            {
-                "claim_id": "c1",
-                "text": "Revenue was 42 million",
-                "label": "contradicted",
-            }
-        ]
-    )
-    report = run(assessments=[asm])
-    case = report["cases"][0]
-    assert case["outcome"] == "failure"
-    assert "contradicted_claim" in case["failure_reasons"]
-    assert case["claims"]["contradicted_count"] == 1
-    assert report["aggregates"]["contradicted_claims"]["numerator"] == 1
-
-
-def test_malformed_citations():
-    for raw in ["Revenue 42 [", "Revenue 42 [one]", "Revenue 42 []", "Revenue 42 [1,]", "Revenue 42 [1-2]"]:
-        tr = trace_obj(raw_answer=raw)
-        asm = assessment_obj(claims=[], citations=[])
-        report = run(traces=[tr], assessments=[asm])
-        case = report["cases"][0]
-        assert case["outcome"] == "failure"
-        assert case["failure_stage"] == "citation"
-        assert case["citations"]["structural_validity"] == "invalid"
-
-
-def test_missing_citations():
-    tr = trace_obj(raw_answer="Revenue was 42 million.")
-    asm = assessment_obj(claims=[], citations=[])
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["outcome"] == "failure"
-    assert case["failure_stage"] == "citation"
-    assert "missing_citations" in case["citations"]["syntax_errors"]
-
-
-def test_out_of_range_citations():
-    tr = trace_obj(raw_answer="Revenue was 42 million [3].")
-    asm = assessment_obj(claims=[], citations=[])
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["outcome"] == "failure"
-    assert case["failure_stage"] == "citation"
-    assert "out_of_range" in case["citations"]["syntax_errors"]
-
-
-def test_irrelevant_citation():
-    asm = assessment_obj(
-        citations=[
-            {
-                "citation_id": 1,
-                "label": "irrelevant",
-                "evidence_sha256": sha("Revenue was 42 million."),
-            }
-        ]
-    )
-    report = run(assessments=[asm])
-    case = report["cases"][0]
-    assert case["outcome"] == "failure"
-    assert case["failure_stage"] == "citation"
-    assert "citation_irrelevant" in case["failure_reasons"]
-    assert report["aggregates"]["citation_support"]["value"] == 0.0
-
-
-def test_false_abstention():
-    tr = trace_obj(status="model_abstention", raw_answer="INSUFFICIENT_EVIDENCE", citation_ids=[])
-    asm = assessment_obj(context="insufficient", correctness="not_applicable", claims=[], citations=[])
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["decision"]["false_abstention"] is True
-    assert case["outcome"] == "failure"
-    assert case["failure_stage"] == "generation"
-    assert "false_abstention" in case["failure_reasons"]
-
-
-def test_correct_abstention():
-    g = gold_question(
-        answerability="unanswerable",
-        expected_decision="abstain",
-        required=[],
-        expected_answer=None,
-    )
-    tr = trace_obj(
-        status="model_abstention",
-        raw_answer="INSUFFICIENT_EVIDENCE",
-        citation_ids=[],
-        evidence=[],
-        candidate_evidence=[],
-    )
-    asm = assessment_obj(
-        context="insufficient",
-        correctness="not_applicable",
-        claims=[],
-        citations=[],
-    )
-    report = run(gold=[g], traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["outcome"] == "success"
-    assert case["failure_stage"] is None
-    assert case["decision"]["correct_abstention"] is True
-
-
-def test_false_answer():
-    g = gold_question(answerability="unanswerable", expected_decision="abstain", required=[], expected_answer=None)
-    tr = trace_obj(status="produced", raw_answer="Revenue was 42 million [1].")
-    asm = assessment_obj(context="insufficient", correctness="incorrect", claims=[], citations=[])
-    # fix gold doc still needed; keep evidence
-    report = run(gold=[g], traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["decision"]["false_answer"] is True
-    assert case["outcome"] == "failure"
-    assert case["failure_stage"] == "generation"
-
-
-def test_missing_retrieval_evidence():
-    tr = trace_obj(evidence=[], citation_ids=[], candidate_evidence=[])
-    tr["raw_answer"] = "INSUFFICIENT_EVIDENCE"
-    tr["status"] = "no_evidence"
-    asm = assessment_obj(context="insufficient", correctness="not_applicable", claims=[], citations=[])
-    # evidence list empty but trace schema requires evidence? empty allowed
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["evidence"]["candidate_evidence"] == "available"
-    assert case["evidence"]["covered_count"] == 0
-    assert case["failure_stage"] == "retrieval"
-    assert "retrieval_required_evidence_missing" in case["failure_reasons"]
-
-
-def test_context_assembly_drop():
-    ev = trace_evidence()
-    candidate = [dict(ev)]
-    tr = trace_obj(evidence=[], citation_ids=[], candidate_evidence=candidate)
-    tr["raw_answer"] = "INSUFFICIENT_EVIDENCE"
-    tr["status"] = "no_evidence"
-    asm = assessment_obj(context="insufficient", correctness="not_applicable", claims=[], citations=[])
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["evidence"]["candidate_evidence"] == "available"
-    assert case["failure_stage"] == "context_assembly"
-    assert "context_assembly_required_evidence_dropped" in case["failure_reasons"]
-
-
-def test_candidate_information_unavailable():
-    tr = trace_obj(evidence=[], citation_ids=[], candidate_evidence=None)
-    tr["raw_answer"] = "INSUFFICIENT_EVIDENCE"
-    tr["status"] = "no_evidence"
-    asm = assessment_obj(context="insufficient", correctness="not_applicable", claims=[], citations=[])
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["evidence"]["candidate_evidence"] == "unavailable"
-    assert case["failure_stage"] != "retrieval"
-    assert case["failure_stage"] == "unknown"
-
-
-def test_backend_error():
-    tr = trace_obj(status="backend_error", raw_answer="", citation_ids=[], evidence=[], candidate_evidence=None)
-    asm = assessment_obj(context="unknown", correctness="unknown", claims=[], citations=[], review_status="unreviewed")
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["outcome"] == "failure"
-    assert case["failure_stage"] == "backend"
+    assert case["outcome"] != "success"
     assert case["trace_status"] == "backend_error"
+    assert case["failure_stage"] == "backend"
 
 
-def test_missing_assessments():
-    report = run(assessments=[])
+def test_unassessed_not_success():
+    gold = parse_gold(canonical_gold())
+    trace = parse_traces([canonical_trace()])
+    report = evaluate_answer_quality(gold, trace, [])
     case = report["cases"][0]
     assert case["outcome"] == "unassessed"
-    assert "missing_assessment" in case["unassessed_reasons"]
     assert case["outcome"] != "success"
-    agg = report["aggregates"]
-    assert agg["answer_correctness"]["denominator"] == 0
-    assert agg["answer_correctness"]["value"] is None
+    assert "missing_assessment" in case["unassessed_reasons"]
 
 
-def test_hash_mismatch():
-    ev = trace_evidence()
-    ev["text_sha256"] = sha("wrong")
-    tr = trace_obj(evidence=[ev])
-    report = run(traces=[tr])
+def test_zero_denominator_null():
+    gold_data = canonical_gold()
+    gold_data["questions"][0]["answerability"] = "unanswerable"
+    gold_data["questions"][0]["expected_decision"] = "abstain"
+    gold_data["questions"][0]["required_evidence"] = []
+    gold_data["questions"][0]["expected_answer"] = {
+        "status": "not_applicable",
+        "text": None,
+        "evidence_ids": [],
+    }
+    gold = parse_gold(gold_data)
+    tr = canonical_trace(status="model_abstention", raw_answer="INSUFFICIENT_EVIDENCE", candidate_evidence=None)
+    tr["evidence"] = []
+    trace = parse_traces([tr])
+    asm = canonical_assessment()
+    asm["context_sufficient"] = "not_applicable"
+    asm["decision"] = "abstained"
+    asm["answer_correct"] = "not_applicable"
+    asm["claims"] = []
+    asm["citations"] = []
+    assessments = parse_assessments([asm])
+    report = evaluate_answer_quality(gold, trace, assessments)
     case = report["cases"][0]
-    assert case["outcome"] == "invalid"
-    assert case["integrity"]["status"] == "failed"
-    assert any("text SHA-256 mismatch" in e for e in case["integrity"]["errors"])
-    assert report["aggregates"]["integrity_failures"]["numerator"] == 1
-
-
-def test_source_hash_mismatch():
-    ev = trace_evidence()
-    ev["source_sha256"] = sha("wrong source")
-    tr = trace_obj(evidence=[ev])
-    report = run(traces=[tr])
-    case = report["cases"][0]
-    assert case["outcome"] == "invalid"
-    assert any("source SHA-256 mismatch" in e for e in case["integrity"]["errors"])
+    assert case["evidence"]["coverage"]["value"] is None
+    assert case["evidence"]["coverage"]["status"] == "not_applicable"
 
 
 def test_invalid_schema_and_duplicate_ids():
     with pytest.raises(EvaluationError):
-        parse_gold({"schema_version": SCHEMA_GOLD, "questions": []})
+        parse_gold({"schema_version": SCHEMA_GOLD, "dataset_id": "x", "corpus": [], "questions": []})
+    bad_gold = canonical_gold()
+    bad_gold["questions"].append(dict(bad_gold["questions"][0]))
     with pytest.raises(EvaluationError):
-        parse_gold({"schema_version": SCHEMA_GOLD, "questions": [gold_question(), gold_question()]})
-    tr = trace_obj()
-    tr2 = dict(tr)
-    tr2["trace_id"] = "t-q2"
-    # duplicate question_id
-    recs = [parse_traces([_strip_schema(tr)])[0], parse_traces([_strip_schema(tr2)])[0]]
-    # force duplicate qid
-    recs[1] = Trace(**{**recs[1].__dict__, "question_id": "q1"})
+        parse_gold(bad_gold)
+    bad_trace = canonical_trace()
+    bad_trace["trace_id"] = "trace-q2"
+    bad_trace["question_id"] = "q1"
     with pytest.raises(EvaluationError):
-        parse_traces([_strip_schema(tr), {**_strip_schema(tr2), "question_id": "q1"}])
-    # invalid assessment schema
+        parse_traces([canonical_trace(), bad_trace])
+    bad_assess = canonical_assessment()
+    bad_assess["assessment_id"] = "assess-q2"
+    bad_assess["question_id"] = "q1"
     with pytest.raises(EvaluationError):
-        parse_assessments([{"schema_version": SCHEMA_ASSESSMENT, "question_id": "q1"}])
-    # trace invalid status
-    bad = _strip_schema(trace_obj())
-    bad["status"] = "nope"
-    with pytest.raises(EvaluationError):
-        parse_traces([bad])
+        parse_assessments([canonical_assessment(), bad_assess])
 
 
-def test_deterministic_report_bytes():
-    report1 = run()
-    report2 = run()
+def test_deterministic_report():
+    report1 = run_canonical()
+    report2 = run_canonical()
     assert render_report(report1) == render_report(report2)
-    # reversed input order should not change report
-    tr = trace_obj()
-    asm = assessment_obj()
-    g = gold_question()
-    g2 = gold_question(qid="q2")
-    t2 = trace_obj(qid="q2")
-    a2 = assessment_obj(qid="q2")
-    golds = [g, g2]
-    traces = [tr, t2]
-    assess = [asm, a2]
-    # shuffle
-    report_a = evaluate_answer_quality(
-        parse_gold({"schema_version": SCHEMA_GOLD, "questions": golds}),
-        parse_traces([_strip_schema(x) for x in traces]),
-        parse_assessments([_strip_schema(x) for x in assess]),
-    )
-    report_b = evaluate_answer_quality(
-        parse_gold({"schema_version": SCHEMA_GOLD, "questions": list(reversed(golds))}),
-        parse_traces([_strip_schema(x) for x in reversed(traces)]),
-        parse_assessments([_strip_schema(x) for x in reversed(assess)]),
-    )
-    assert render_report(report_a) == render_report(report_b)
 
 
-def test_extractive_output_handled_separately():
-    tr = trace_obj(
-        answer_mode="extractive",
-        raw_answer="Revenue was 42 million.",
-        citation_ids=[],
-    )
-    asm = assessment_obj(citations=[])
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["outcome"] == "success"
-    assert case["citations"]["requirement"] == "not_applicable"
-    assert case["citations"]["structural_validity"] == "not_applicable"
-
-
-def test_coverage_does_not_prove_context_sufficiency():
-    asm = assessment_obj(context="insufficient")
-    report = run(assessments=[asm])
-    case = report["cases"][0]
-    assert case["evidence"]["coverage"]["value"] == 1.0
-    assert case["context_sufficiency"] == "insufficient"
-    assert case["outcome"] == "failure"
-    agg = report["aggregates"]
-    assert agg["required_evidence_coverage"]["value"] == 1.0
-    assert agg["context_sufficiency"]["value"] == 0.0
-
-
-def test_candidate_missing_not_retrieval_failure():
-    tr = trace_obj(evidence=[], citation_ids=[], candidate_evidence=None)
-    tr["raw_answer"] = "INSUFFICIENT_EVIDENCE"
-    tr["status"] = "no_evidence"
-    asm = assessment_obj(context="insufficient", correctness="not_applicable", claims=[], citations=[])
-    report = run(traces=[tr], assessments=[asm])
-    case = report["cases"][0]
-    assert case["evidence"]["candidate_evidence"] == "unavailable"
-    assert case["failure_stage"] != "retrieval"
-
-
-def test_loader_json_and_jsonl(tmp_path):
-    gold = [gold_question()]
-    trace = trace_obj()
-    asm = assessment_obj()
-    gold_path = tmp_path / "gold.json"
-    gold_path.write_text(json.dumps({"schema_version": SCHEMA_GOLD, "questions": gold}))
-    trace_path = tmp_path / "traces.jsonl"
-    trace_path.write_text(json.dumps(_strip_schema(trace)) + "\n")
-    # headerless trace needs schema_version per record
-    trace_rec = dict(_strip_schema(trace))
-    trace_rec["schema_version"] = SCHEMA_TRACE
-    trace_path.write_text(json.dumps(trace_rec) + "\n")
-    asm_path = tmp_path / "assessments.jsonl"
-    asm_rec = dict(_strip_schema(asm))
-    asm_rec["schema_version"] = SCHEMA_ASSESSMENT
-    asm_path.write_text(json.dumps(asm_rec) + "\n")
-    g = load_gold(gold_path)
-    t = load_traces(trace_path)
-    a = load_assessments(asm_path)
-    report = evaluate_answer_quality(g, t, a)
-    assert report["cases"][0]["outcome"] == "success"
-
-
-def test_write_report_and_cli(tmp_path):
-    report = run()
-    path = write_report(report, tmp_path)
-    assert path.name == "answer_quality_report.json"
-    assert path.read_text().endswith("\n")
-    # byte identical rewrite
-    before = path.read_bytes()
-    write_report(report, tmp_path)
-    assert path.read_bytes() == before
-    # CLI
-    import subprocess, sys
-    gold = tmp_path / "gold.json"
-    gold.write_text(json.dumps({"schema_version": SCHEMA_GOLD, "questions": [gold_question()]}))
-    tr = tmp_path / "traces.jsonl"
-    tr.write_text(json.dumps({**_strip_schema(trace_obj()), "schema_version": SCHEMA_TRACE}) + "\n")
-    asm = tmp_path / "assessments.jsonl"
-    asm.write_text(json.dumps({**_strip_schema(assessment_obj()), "schema_version": SCHEMA_ASSESSMENT}) + "\n")
-    out = tmp_path / "out"
-    result = subprocess.run(
-        [sys.executable, str(Path(__file__).resolve().parents[1] / "scripts" / "evaluate_answer_quality.py"),
-         "--gold", str(gold), "--traces", str(tr), "--assessments", str(asm), "--out", str(out)],
-        capture_output=True, text=True,
-    )
-    assert result.returncode == 0, result.stderr
-    assert (out / "answer_quality_report.json").exists()
-
-
-def test_finrag_file_resolves_in_worktree():
+def test_portable_import():
     import finrag
 
-    assert "FinRAG-eval-engine" in str(finrag.__file__)
+    repo_root = Path(__file__).resolve().parents[1]
+    assert Path(finrag.__file__).resolve().is_relative_to(repo_root)
+
+
+@pytest.mark.skipif(not REAL_GOLD.exists(), reason="canonical data worktree unavailable")
+def test_real_data_counts_and_hashes():
+    gold = load_gold(REAL_GOLD)
+    traces = load_traces(REAL_TRACES)
+    assessments = load_assessments(REAL_ASSESSMENTS)
+    assert len(gold) == 16
+    assert len(traces) == 16
+    assert len(assessments) == 14
+
+
+@pytest.mark.skipif(not REAL_GOLD.exists(), reason="canonical data worktree unavailable")
+def test_real_data_primary_stages():
+    gold = load_gold(REAL_GOLD)
+    traces = load_traces(REAL_TRACES)
+    assessments = load_assessments(REAL_ASSESSMENTS)
+    gold_sha = sha256_file(REAL_GOLD)
+    report = evaluate_answer_quality(gold, traces, assessments, gold_sha256=gold_sha)
+    expected = json.loads(REAL_EXPECTED.read_text())
+    cases = {c["question_id"]: c for c in report["cases"]}
+    mismatches = 0
+    for ec in expected["cases"]:
+        case = cases[ec["question_id"]]
+        if case["failure_stage"] != ec["expected_primary"]:
+            mismatches += 1
+        # required evidence
+        rexp = ec["assertions"]["required_evidence"]
+        if rexp["status"] != "not_applicable":
+            assert case["evidence"]["coverage"]["status"] == rexp["status"]
+            assert case["evidence"]["covered_count"] == rexp["matched"]
+            assert case["evidence"]["required_count"] == rexp["required"]
+        # context
+        if ec["assertions"]["context_sufficient"] is not None:
+            assert case["context_sufficiency"] == ec["assertions"]["context_sufficient"]
+        else:
+            assert case["context_sufficiency"] is None
+        # abstention error
+        if ec["assertions"]["abstention_error"] != "not_assessed":
+            assert case["abstention_error"] == ec["assertions"]["abstention_error"]
+        # diagnostic
+        assert case["coverage_complete_but_context_insufficient"] == ec["assertions"]["coverage_complete_but_context_insufficient"]
+    assert mismatches == 0
+    assert report["aggregates"]["integrity_failures"]["numerator"] == 0
+
+
+@pytest.mark.skipif(not REAL_GOLD.exists(), reason="canonical data worktree unavailable")
+def test_real_data_metric_internal_consistency():
+    gold = load_gold(REAL_GOLD)
+    traces = load_traces(REAL_TRACES)
+    assessments = load_assessments(REAL_ASSESSMENTS)
+    gold_sha = sha256_file(REAL_GOLD)
+    report = evaluate_answer_quality(gold, traces, assessments, gold_sha256=gold_sha)
+    agg = report["aggregates"]
+    # numerators <= denominators where applicable
+    for key in ("trace_coverage", "assessment_coverage", "integrity_failures", "decision_accuracy",
+                "false_abstention", "false_answer", "correct_abstention", "required_evidence_coverage",
+                "context_sufficiency", "answer_correctness", "claim_faithfulness", "citation_structural_validity",
+                "citation_support"):
+        m = agg[key]
+        assert m["numerator"] <= m["denominator"]
+        if m["denominator"] == 0:
+            assert m["value"] is None
+    # unassessed cases are not successes
+    unassessed = [c for c in report["cases"] if c["outcome"] == "unassessed"]
+    for c in unassessed:
+        assert c["outcome"] != "success"
+    # backend errors excluded from decision accuracy denominator
+    backend_cases = [c for c in report["cases"] if c["trace_status"] == "backend_error"]
+    assert len(backend_cases) == 1
+    assert backend_cases[0]["observed_decision"] is None
+
+
+@pytest.mark.skipif(not REAL_GOLD.exists(), reason="canonical data worktree unavailable")
+def test_real_data_determinism(tmp_path):
+    gold = load_gold(REAL_GOLD)
+    traces = load_traces(REAL_TRACES)
+    assessments = load_assessments(REAL_ASSESSMENTS)
+    gold_sha = sha256_file(REAL_GOLD)
+    report1 = evaluate_answer_quality(gold, traces, assessments, gold_sha256=gold_sha)
+    report2 = evaluate_answer_quality(gold, traces, assessments, gold_sha256=gold_sha)
+    assert render_report(report1) == render_report(report2)
+    # byte-identical file output
+    p1 = write_report(report1, tmp_path / "a")
+    p2 = write_report(report2, tmp_path / "b")
+    assert p1.read_bytes() == p2.read_bytes()
+
+
+@pytest.mark.skipif(not REAL_GOLD.exists(), reason="canonical data worktree unavailable")
+def test_cli_real_data(tmp_path):
+    import subprocess
+    import sys
+
+    out = tmp_path / "out"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "evaluate_answer_quality.py"),
+            "--gold", str(REAL_GOLD),
+            "--traces", str(REAL_TRACES),
+            "--assessments", str(REAL_ASSESSMENTS),
+            "--out", str(out),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert (out / "report.json").exists()

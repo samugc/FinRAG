@@ -4,8 +4,7 @@ The evaluator keeps three entities strictly separate:
 
 ``finrag.answer_gold.v1``
     Reviewed ground truth: questions, document provenance, answerability,
-    expected decisions, required evidence snapshots, expected answers and
-    review status.
+    expected decisions, required evidence, expected answers and review status.
 
 ``finrag.answer_trace.v1``
     Immutable execution snapshots: exact generated output, ordered evidence,
@@ -13,17 +12,17 @@ The evaluator keeps three entities strictly separate:
     candidate evidence.
 
 ``finrag.answer_assessment.v1``
-    Reviewed semantic judgements: context sufficiency, answer correctness,
-    claim support, citation support and secondary error labels.
+    Reviewed semantic judgements: context sufficiency, decision, answer
+    correctness, claim support, citation support and secondary labels.
 
 Only standard-library dependencies are used.  Semantic truth is never
-inferred from lexical overlap: the reviewed assessment labels are the only
-source of semantic truth.  Structural checks (hashes, references, citation
-syntax, evidence coverage) are computed independently.
+inferred from lexical overlap: reviewed assessment labels are the only source
+of semantic truth.  Structural checks are computed independently.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -36,7 +35,7 @@ SCHEMA_TRACE = "finrag.answer_trace.v1"
 SCHEMA_ASSESSMENT = "finrag.answer_assessment.v1"
 SCHEMA_REPORT = "finrag.answer_evaluation_report.v1"
 
-REPORT_FILENAME = "answer_quality_report.json"
+REPORT_FILENAME = "report.json"
 
 ANSWER_STATUSES = frozenset({
     "produced",
@@ -51,7 +50,7 @@ ABSTENTION_STATUSES = frozenset({
     "no_evidence",
     "insufficient_context",
 })
-ANSWER_MODES = frozenset({"generated", "extractive"})
+GENERATOR_VALUES = frozenset({"qwen", "extractive"})
 FAILURE_STAGES = (
     "retrieval",
     "context_assembly",
@@ -60,41 +59,27 @@ FAILURE_STAGES = (
     "backend",
     "unknown",
 )
-_STAGE_PRIORITY = {
-    "backend": 0,
-    "retrieval": 1,
-    "context_assembly": 2,
-    "generation": 3,
-    "citation": 4,
-    "unknown": 5,
-}
 _HEX64 = re.compile(r"[0-9a-fA-F]{64}\Z")
 
-CONTEXT_LABELS = frozenset({"sufficient", "insufficient", "unknown"})
-ANSWER_CORRECTNESS_LABELS = frozenset({
-    "correct",
-    "incorrect",
-    "unknown",
-    "not_applicable",
-})
-CLAIM_LABELS = frozenset({
+CONTEXT_LABELS = frozenset({"sufficient", "insufficient", "not_applicable"})
+ANSWER_CORRECT_LABELS = frozenset({"correct", "incorrect", "not_applicable"})
+CLAIM_SUPPORT_LABELS = frozenset({
     "supported",
     "unsupported",
     "contradicted",
-    "unknown",
+    "unassessed",
 })
-CITATION_LABELS = frozenset({
-    "supported",
-    "unsupported",
+CITATION_SUPPORT_LABELS = frozenset({
+    "supports",
+    "does_not_support",
     "irrelevant",
-    "contradicted",
-    "unknown",
+    "unassessed",
 })
-REVIEW_STATUSES = frozenset({"reviewed", "unreviewed"})
-GOLD_REVIEW_STATUSES = frozenset({"reviewed", "pending"})
+REVIEW_STATUSES = frozenset({"reviewed", "pending"})
 ANSWERABILITY_VALUES = frozenset({"answerable", "unanswerable"})
 DECISION_VALUES = frozenset({"answer", "abstain"})
-ANSWER_KINDS = frozenset({"numeric", "text", "boolean"})
+ASSESSMENT_DECISION_VALUES = frozenset({"answered", "abstained"})
+GOLD_REVIEW_STATUSES = frozenset({"reviewed", "pending"})
 CITATION_ORDER = (
     "no_substantive_content",
     "malformed_brackets",
@@ -105,7 +90,7 @@ CITATION_ORDER = (
 
 
 class EvaluationError(ValueError):
-    """Raised for invalid schemas, references, hashes or integrity failures."""
+    """Raised for invalid schemas, references or integrity failures."""
 
 
 @dataclass(frozen=True)
@@ -113,89 +98,104 @@ class GoldDocument:
     document_id: str
     source: str
     sha256: str
+    provenance: str
 
 
 @dataclass(frozen=True)
 class RequiredEvidence:
     evidence_id: str
     document_id: str
-    source: str
-    text: str
-    sha256: str
+    chunk_id: int
+    page_index: int | None
+    quote: str
+    review_status: str
 
 
 @dataclass(frozen=True)
 class ExpectedAnswer:
-    kind: str
-    value: Any
-    text: str | None
-    tolerance: float | None
+    status: str
+    text: str
+    evidence_ids: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class GoldQuestion:
     question_id: str
     question: str
-    documents: tuple[GoldDocument, ...]
+    document_id: str
     answerability: str
     expected_decision: str
+    expected_answer: ExpectedAnswer
     required_evidence: tuple[RequiredEvidence, ...]
-    expected_answer: ExpectedAnswer | None
     review_status: str
+    notes: str | None
 
 
 @dataclass(frozen=True)
-class EvidenceSnapshot:
-    evidence_id: str
+class CandidateEvidence:
+    document_id: str
+    chunk_id: int
+    page_index: int | None
+
+
+@dataclass(frozen=True)
+class TraceEvidence:
+    citation_id: int
+    kind: str
+    document_id: str
     source: str
+    chunk_id: int
+    page_index: int | None
+    score: float
     text: str
     text_sha256: str
-    source_sha256: str
-    document_id: str | None
 
 
 @dataclass(frozen=True)
 class Trace:
     trace_id: str
+    run_id: str
     question_id: str
-    answer_mode: str
+    gold_sha256: str
+    config: dict[str, Any]
+    baseline: dict[str, Any]
     status: str
     raw_answer: str
-    evidence: tuple[EvidenceSnapshot, ...]
-    citation_ids: tuple[int, ...]
-    execution: dict[str, Any]
-    candidate_evidence: tuple[EvidenceSnapshot, ...] | None
+    reason: str
+    evidence: tuple[TraceEvidence, ...]
+    candidate_evidence: tuple[CandidateEvidence, ...] | None
     error: dict[str, Any] | None
-    metadata: dict[str, Any]
 
 
 @dataclass(frozen=True)
 class ClaimAssessment:
     claim_id: str
     text: str
-    label: str
-    evidence_sha256: tuple[str, ...]
+    support: str
 
 
 @dataclass(frozen=True)
 class CitationAssessment:
+    claim_id: str
     citation_id: int
-    label: str
     evidence_sha256: str
-    evidence_id: str | None
+    support: str
 
 
 @dataclass(frozen=True)
 class Assessment:
-    assessment_id: str | None
+    assessment_id: str
+    trace_id: str
     question_id: str
-    review_status: str
-    context_sufficiency: str
-    answer_correctness: str
-    claims: tuple[ClaimAssessment, ...] | None
-    citations: tuple[CitationAssessment, ...] | None
-    secondary_errors: tuple[str, ...]
-    metadata: dict[str, Any]
+    reviewer_id: str
+    reviewed_at: str
+    context_sufficient: str
+    decision: str
+    answer_correct: str
+    claims: tuple[ClaimAssessment, ...]
+    citations: tuple[CitationAssessment, ...]
+    secondary_labels: tuple[str, ...]
+    notes: str | None
 
 
 def _error(context: str, message: str) -> None:
@@ -223,8 +223,8 @@ def _nonempty_str(value: Any, context: str) -> str:
 def _optional_str(value: Any, context: str) -> str | None:
     if value is None:
         return None
-    if not isinstance(value, str) or not value.strip():
-        _error(context, "must be a non-empty string or null")
+    if not isinstance(value, str):
+        _error(context, "must be a string or null")
     return value
 
 
@@ -234,12 +234,26 @@ def _hex64(value: Any, context: str) -> str:
     return value.lower()
 
 
-def _str_list(value: Any, context: str) -> tuple[str, ...]:
-    items = _list(value, context)
-    result: list[str] = []
-    for index, item in enumerate(items):
-        result.append(_nonempty_str(item, f"{context}[{index}]"))
-    return tuple(result)
+def _int(value: Any, context: str, *, nonnegative: bool = True) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        _error(context, "must be an integer")
+    if nonnegative and value < 0:
+        _error(context, "must be non-negative")
+    return value
+
+
+def _optional_int(value: Any, context: str) -> int | None:
+    if value is None:
+        return None
+    return _int(value, context)
+
+
+def _number(value: Any, context: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        _error(context, "must be a number")
+    if not math.isfinite(value):
+        _error(context, "must be finite")
+    return float(value)
 
 
 def _check_keys(
@@ -257,16 +271,43 @@ def _check_keys(
         _error(context, f"missing required field(s): {', '.join(missing)}")
 
 
-def _strip_schema_version(
-    record: dict[str, Any],
-    expected: str,
-    context: str,
-) -> dict[str, Any]:
-    copy = dict(record)
-    version = copy.pop("schema_version", None)
-    if version is not None and version != expected:
-        _error(context, f"schema_version must be {expected!r}")
-    return copy
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _text_present(needle: str, haystack: str) -> bool:
+    if needle in haystack:
+        return True
+    needle_norm = needle.strip().rstrip(" .,!?:;").casefold()
+    haystack_norm = haystack.strip().rstrip(" .,!?:;").casefold()
+    return needle_norm in haystack_norm or needle_norm in haystack.casefold()
+
+
+def _resolve_repo_root(start: Path) -> Path:
+    current = start.resolve()
+    if current.is_file():
+        current = current.parent
+    for candidate in [current, *current.parents]:
+        if (candidate / "data" / "raw").is_dir():
+            return candidate
+    return Path.cwd().resolve()
+
+
+def _resolve_source_path(source: str, repo_root: Path) -> Path:
+    path = Path(source)
+    if path.is_absolute():
+        return path
+    if (Path.cwd() / path).exists():
+        return Path.cwd() / path
+    return repo_root / path
 
 
 def _load_json_or_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -290,7 +331,7 @@ def _load_json_or_jsonl(path: Path) -> list[dict[str, Any]]:
             result.append(item)
         return result
     _error(str(path), "top-level JSON value must be an object or list")
-    return []  # unreachable
+    return []
 
 
 def _load_jsonl(text: str, path: Path) -> list[dict[str, Any]]:
@@ -328,175 +369,126 @@ def _load_jsonl(text: str, path: Path) -> list[dict[str, Any]]:
         records.append(obj)
     if not records:
         _error(str(path), "JSONL contains no records")
-    if header_version is not None:
-        for obj in records:
-            if obj.get("schema_version") != header_version:
-                _error(str(path), "inconsistent schema_version in JSONL records")
     return records
-
-
-def _load_dataset(
-    path: Path,
-    expected_schema: str,
-    collection_keys: tuple[str, ...],
-    label: str,
-) -> list[dict[str, Any]]:
-    raw = _load_json_or_jsonl(path)
-    if len(raw) == 1 and isinstance(raw[0], dict):
-        first = raw[0]
-        present = [key for key in collection_keys if key in first]
-        if len(present) > 1:
-            _error(str(path), f"multiple collection fields: {', '.join(present)}")
-        if present:
-            allowed_top = {"schema_version", *collection_keys, "metadata"}
-            _check_keys(first, {"schema_version"}, allowed_top - {"schema_version"}, str(path))
-            version = first.get("schema_version")
-            if version != expected_schema:
-                _error(
-                    str(path),
-                    f"schema_version must be {expected_schema!r}, got {version!r}",
-                )
-            collection = first[present[0]]
-            if not isinstance(collection, list):
-                _error(str(path), f"{present[0]} must be a list")
-            records = collection
-            if any(not isinstance(item, dict) for item in records):
-                _error(str(path), f"{present[0]} must contain objects")
-            return [
-                _strip_schema_version(item, expected_schema, f"{label} entry")
-                for item in records
-            ]
-        if "schema_version" in first:
-            version = first["schema_version"]
-            if version != expected_schema:
-                _error(
-                    str(path),
-                    f"schema_version must be {expected_schema!r}, got {version!r}",
-                )
-            return [_strip_schema_version(first, expected_schema, label)]
-    versioned = all(
-        isinstance(item, dict) and item.get("schema_version") is not None
-        for item in raw
-    )
-    if not versioned:
-        _error(
-            str(path),
-            "records must include schema_version or be wrapped in an object",
-        )
-    records = []
-    for item in raw:
-        if not isinstance(item, dict):
-            _error(str(path), "entry must be an object")
-        version = item.get("schema_version")
-        if version != expected_schema:
-            _error(
-                str(path),
-                f"schema_version must be {expected_schema!r}, got {version!r}",
-            )
-        records.append(_strip_schema_version(item, expected_schema, label))
-    return records
-
-
-def sha256_text(text: str) -> str:
-    import hashlib
-
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def parse_gold(document: Any) -> list[GoldQuestion]:
-    if isinstance(document, dict):
-        if "schema_version" in document and any(
-            key in document for key in ("questions", "cases", "items")
-        ):
-            present = [
-                key
-                for key in ("questions", "cases", "items")
-                if key in document
-            ]
-            if len(present) > 1:
-                _error("gold", f"multiple collection fields: {', '.join(present)}")
-            version = document.get("schema_version")
-            if version != SCHEMA_GOLD:
-                _error(
-                    "gold",
-                    f"schema_version must be {SCHEMA_GOLD!r}, got {version!r}",
-                )
-            records = document[present[0]]
-            if not isinstance(records, list):
-                _error("gold", f"{present[0]} must be a list")
-        else:
-            records = [document]
-    elif isinstance(document, list):
-        records = document
-    else:
-        _error("gold", "document must be an object or list")
-    if not records:
-        _error("gold", "questions must be non-empty")
-    questions: list[GoldQuestion] = []
-    seen_ids: set[str] = set()
-    for index, record in enumerate(records):
-        context = f"gold question {index}"
-        item = _strip_schema_version(
-            _mapping(record, context), SCHEMA_GOLD, context
-        )
+    if not isinstance(document, dict):
+        _error("gold", "document must be an object")
+    _check_keys(
+        document,
+        {"schema_version", "dataset_id", "corpus", "questions"},
+        set(),
+        "gold",
+    )
+    if document["schema_version"] != SCHEMA_GOLD:
+        _error("gold", f"schema_version must be {SCHEMA_GOLD!r}")
+    _nonempty_str(document["dataset_id"], "gold.dataset_id")
+    corpus_raw = _list(document["corpus"], "gold.corpus")
+    if not corpus_raw:
+        _error("gold", "corpus must be non-empty")
+    corpus: dict[str, GoldDocument] = {}
+    seen_doc_ids: set[str] = set()
+    seen_sources: set[str] = set()
+    for index, raw_doc in enumerate(corpus_raw):
+        context = f"gold.corpus[{index}]"
+        doc = _mapping(raw_doc, context)
         _check_keys(
-            item,
-            {"question_id", "question", "documents", "answerability", "expected_decision", "required_evidence", "review_status"},
-            {"expected_answer"},
+            doc,
+            {"document_id", "source", "sha256", "provenance"},
+            set(),
             context,
         )
-        question_id = _nonempty_str(item["question_id"], f"{context}.question_id")
-        if question_id in seen_ids:
+        document_id = _nonempty_str(doc["document_id"], f"{context}.document_id")
+        if document_id in seen_doc_ids:
+            _error(context, f"duplicate document_id {document_id!r}")
+        seen_doc_ids.add(document_id)
+        source = _nonempty_str(doc["source"], f"{context}.source")
+        if source in seen_sources:
+            _error(context, f"duplicate source {source!r}")
+        seen_sources.add(source)
+        sha = _hex64(doc["sha256"], f"{context}.sha256")
+        provenance = _nonempty_str(doc["provenance"], f"{context}.provenance")
+        corpus[document_id] = GoldDocument(
+            document_id=document_id,
+            source=source,
+            sha256=sha,
+            provenance=provenance,
+        )
+    questions_raw = _list(document["questions"], "gold.questions")
+    if not questions_raw:
+        _error("gold", "questions must be non-empty")
+    questions: list[GoldQuestion] = []
+    seen_question_ids: set[str] = set()
+    for index, raw_question in enumerate(questions_raw):
+        context = f"gold.questions[{index}]"
+        q = _mapping(raw_question, context)
+        _check_keys(
+            q,
+            {
+                "question_id",
+                "question",
+                "document_id",
+                "answerability",
+                "expected_decision",
+                "expected_answer",
+                "required_evidence",
+                "review_status",
+            },
+            {"notes"},
+            context,
+        )
+        question_id = _nonempty_str(q["question_id"], f"{context}.question_id")
+        if question_id in seen_question_ids:
             _error(context, f"duplicate question_id {question_id!r}")
-        seen_ids.add(question_id)
-        question = _nonempty_str(item["question"], f"{context}.question")
-        documents_raw = _list(item["documents"], f"{context}.documents")
-        if not documents_raw:
-            _error(context, "documents must be non-empty")
-        documents: list[GoldDocument] = []
-        seen_doc_ids: set[str] = set()
-        seen_sources: set[str] = set()
-        for doc_index, raw_doc in enumerate(documents_raw):
-            doc_context = f"{context}.documents[{doc_index}]"
-            doc = _mapping(raw_doc, doc_context)
-            _check_keys(
-                doc,
-                {"document_id", "source", "sha256"},
-                {"content"},
-                doc_context,
-            )
-            document_id = _nonempty_str(
-                doc["document_id"], f"{doc_context}.document_id"
-            )
-            if document_id in seen_doc_ids:
-                _error(doc_context, f"duplicate document_id {document_id!r}")
-            seen_doc_ids.add(document_id)
-            source = _nonempty_str(doc["source"], f"{doc_context}.source")
-            if source in seen_sources:
-                _error(doc_context, f"duplicate source {source!r}")
-            seen_sources.add(source)
-            sha = _hex64(doc["sha256"], f"{doc_context}.sha256")
-            content = None
-            if "content" in doc and doc["content"] is not None:
-                content = _nonempty_str(doc["content"], f"{doc_context}.content")
-                if sha256_text(content) != sha:
-                    _error(doc_context, "content SHA-256 does not match sha256")
-            documents.append(
-                GoldDocument(document_id=document_id, source=source, sha256=sha)
-            )
-        answerability = item["answerability"]
+        seen_question_ids.add(question_id)
+        question = _nonempty_str(q["question"], f"{context}.question")
+        document_id = _nonempty_str(q["document_id"], f"{context}.document_id")
+        if document_id not in corpus:
+            _error(context, f"unknown document_id {document_id!r}")
+        answerability = q["answerability"]
         if answerability not in ANSWERABILITY_VALUES:
             _error(context, "invalid answerability")
-        expected_decision = item["expected_decision"]
+        expected_decision = q["expected_decision"]
         if expected_decision not in DECISION_VALUES:
             _error(context, "invalid expected_decision")
         if answerability == "answerable" and expected_decision != "answer":
             _error(context, "answerable questions must expect decision 'answer'")
         if answerability == "unanswerable" and expected_decision != "abstain":
             _error(context, "unanswerable questions must expect decision 'abstain'")
-        required_raw = _list(
-            item["required_evidence"], f"{context}.required_evidence"
+        expected_answer_raw = _mapping(
+            q["expected_answer"], f"{context}.expected_answer"
         )
+        _check_keys(
+            expected_answer_raw,
+            {"status", "text", "evidence_ids"},
+            set(),
+            f"{context}.expected_answer",
+        )
+        expected_status = _nonempty_str(
+            expected_answer_raw["status"], f"{context}.expected_answer.status"
+        )
+        expected_text_raw = expected_answer_raw["text"]
+        if expected_text_raw is None:
+            expected_text = None
+        else:
+            expected_text = _nonempty_str(
+                expected_text_raw, f"{context}.expected_answer.text"
+            )
+        evidence_ids_raw = _list(
+            expected_answer_raw["evidence_ids"],
+            f"{context}.expected_answer.evidence_ids",
+        )
+        expected_evidence_ids = tuple(
+            _nonempty_str(item, f"{context}.expected_answer.evidence_ids")
+            for item in evidence_ids_raw
+        )
+        expected_answer = ExpectedAnswer(
+            status=expected_status,
+            text=expected_text,
+            evidence_ids=expected_evidence_ids,
+        )
+        required_raw = _list(q["required_evidence"], f"{context}.required_evidence")
         required: list[RequiredEvidence] = []
         seen_required_ids: set[str] = set()
         for ev_index, raw_ev in enumerate(required_raw):
@@ -504,255 +496,196 @@ def parse_gold(document: Any) -> list[GoldQuestion]:
             ev = _mapping(raw_ev, ev_context)
             _check_keys(
                 ev,
-                {"evidence_id", "document_id", "source", "text", "sha256"},
+                {"evidence_id", "document_id", "chunk_id", "page_index", "quote", "review_status"},
                 set(),
                 ev_context,
             )
-            evidence_id = _nonempty_str(
-                ev["evidence_id"], f"{ev_context}.evidence_id"
-            )
+            evidence_id = _nonempty_str(ev["evidence_id"], f"{ev_context}.evidence_id")
             if evidence_id in seen_required_ids:
                 _error(ev_context, f"duplicate evidence_id {evidence_id!r}")
             seen_required_ids.add(evidence_id)
-            document_id = _nonempty_str(
-                ev["document_id"], f"{ev_context}.document_id"
-            )
-            source = _nonempty_str(ev["source"], f"{ev_context}.source")
-            matching_docs = [
-                doc for doc in documents if doc.document_id == document_id
-            ]
-            if not matching_docs:
-                _error(ev_context, f"document_id {document_id!r} is not declared")
-            if matching_docs[0].source != source:
-                _error(ev_context, "source does not match declared document")
-            text = _nonempty_str(ev["text"], f"{ev_context}.text")
-            sha = _hex64(ev["sha256"], f"{ev_context}.sha256")
-            if sha256_text(text) != sha:
-                _error(ev_context, "text SHA-256 does not match sha256")
+            ev_document_id = _nonempty_str(ev["document_id"], f"{ev_context}.document_id")
+            if ev_document_id not in corpus:
+                _error(ev_context, f"unknown document_id {ev_document_id!r}")
+            chunk_id = _int(ev["chunk_id"], f"{ev_context}.chunk_id")
+            page_index = _optional_int(ev["page_index"], f"{ev_context}.page_index")
+            quote = _nonempty_str(ev["quote"], f"{ev_context}.quote")
+            review_status = ev["review_status"]
+            if review_status not in GOLD_REVIEW_STATUSES:
+                _error(ev_context, "invalid review_status")
             required.append(
                 RequiredEvidence(
                     evidence_id=evidence_id,
-                    document_id=document_id,
-                    source=source,
-                    text=text,
-                    sha256=sha,
+                    document_id=ev_document_id,
+                    chunk_id=chunk_id,
+                    page_index=page_index,
+                    quote=quote,
+                    review_status=review_status,
                 )
             )
-        review_status = item["review_status"]
+        review_status = q["review_status"]
         if review_status not in GOLD_REVIEW_STATUSES:
             _error(context, "invalid review_status")
-        expected_answer = None
-        if "expected_answer" in item and item["expected_answer"] is not None:
-            answer_context = f"{context}.expected_answer"
-            answer_value = _mapping(item["expected_answer"], answer_context)
-            _check_keys(
-                answer_value,
-                {"kind", "value"},
-                {"text", "tolerance"},
-                answer_context,
-            )
-            kind = answer_value["kind"]
-            if kind not in ANSWER_KINDS:
-                _error(answer_context, "invalid expected answer kind")
-            value = answer_value["value"]
-            if kind == "numeric":
-                if isinstance(value, bool) or not isinstance(value, (int, float)):
-                    _error(answer_context, "numeric value must be a number")
-                if not math.isfinite(value):
-                    _error(answer_context, "numeric value must be finite")
-                tolerance = answer_value.get("tolerance")
-                if tolerance is not None:
-                    if isinstance(tolerance, bool) or not isinstance(tolerance, (int, float)):
-                        _error(answer_context, "tolerance must be a number")
-                    if tolerance < 0 or not math.isfinite(tolerance):
-                        _error(answer_context, "tolerance must be non-negative and finite")
-            elif kind == "boolean":
-                if not isinstance(value, bool):
-                    _error(answer_context, "boolean value must be a boolean")
-                tolerance = None
-            else:
-                if not isinstance(value, str):
-                    _error(answer_context, "text value must be a string")
-                tolerance = None
-            text_value = answer_value.get("text")
-            if text_value is not None:
-                text_value = _nonempty_str(text_value, f"{answer_context}.text")
-            if answerability == "unanswerable":
-                _error(context, "unanswerable questions cannot have expected_answer")
-            expected_answer = ExpectedAnswer(
-                kind=kind,
-                value=value,
-                text=text_value,
-                tolerance=tolerance,
-            )
-        if answerability == "answerable" and expected_answer is None:
-            _error(context, "answerable questions require expected_answer")
+        notes = _optional_str(q.get("notes"), f"{context}.notes")
         questions.append(
             GoldQuestion(
                 question_id=question_id,
                 question=question,
-                documents=tuple(documents),
+                document_id=document_id,
                 answerability=answerability,
                 expected_decision=expected_decision,
-                required_evidence=tuple(required),
                 expected_answer=expected_answer,
+                required_evidence=tuple(required),
                 review_status=review_status,
+                notes=notes,
             )
         )
     return questions
 
 
-def _parse_evidence(record: Any, context: str, index: int | None = None) -> EvidenceSnapshot:
+def _parse_trace_evidence(record: Any, context: str) -> TraceEvidence:
     item = _mapping(record, context)
-    optional_rank = "rank" in item
-    allowed_optional = {"document_id", "rank"}
     _check_keys(
         item,
-        {"evidence_id", "source", "text", "text_sha256", "source_sha256"},
-        allowed_optional,
+        {
+            "citation_id",
+            "kind",
+            "document_id",
+            "source",
+            "chunk_id",
+            "page_index",
+            "score",
+            "text",
+            "text_sha256",
+        },
+        set(),
         context,
     )
-    evidence_id = _nonempty_str(item["evidence_id"], f"{context}.evidence_id")
+    citation_id = _int(item["citation_id"], f"{context}.citation_id")
+    if citation_id < 1:
+        _error(context, "citation_id must be positive")
+    kind = _nonempty_str(item["kind"], f"{context}.kind")
+    document_id = _nonempty_str(item["document_id"], f"{context}.document_id")
     source = _nonempty_str(item["source"], f"{context}.source")
+    chunk_id = _int(item["chunk_id"], f"{context}.chunk_id")
+    page_index = _optional_int(item["page_index"], f"{context}.page_index")
+    score = _number(item["score"], f"{context}.score")
     text = _nonempty_str(item["text"], f"{context}.text")
     text_sha = _hex64(item["text_sha256"], f"{context}.text_sha256")
-    source_sha = _hex64(item["source_sha256"], f"{context}.source_sha256")
-    document_id = _optional_str(item.get("document_id"), f"{context}.document_id")
-    if optional_rank:
-        rank = item["rank"]
-        if isinstance(rank, bool) or not isinstance(rank, int) or rank < 1:
-            _error(context, "rank must be a positive integer")
-        if index is not None and rank != index + 1:
-            _error(context, f"rank must equal {index + 1} in ordered evidence")
-    return EvidenceSnapshot(
-        evidence_id=evidence_id,
+    if sha256_text(text) != text_sha:
+        _error(context, "text SHA-256 does not match text_sha256")
+    return TraceEvidence(
+        citation_id=citation_id,
+        kind=kind,
+        document_id=document_id,
         source=source,
+        chunk_id=chunk_id,
+        page_index=page_index,
+        score=score,
         text=text,
         text_sha256=text_sha,
-        source_sha256=source_sha,
+    )
+
+
+def _parse_candidate(record: Any, context: str) -> CandidateEvidence:
+    item = _mapping(record, context)
+    _check_keys(item, {"document_id", "chunk_id", "page_index"}, set(), context)
+    document_id = _nonempty_str(item["document_id"], f"{context}.document_id")
+    chunk_id = _int(item["chunk_id"], f"{context}.chunk_id")
+    page_index = _optional_int(item["page_index"], f"{context}.page_index")
+    return CandidateEvidence(
         document_id=document_id,
+        chunk_id=chunk_id,
+        page_index=page_index,
     )
 
 
 def _parse_trace(record: Any) -> Trace:
     context = "trace"
-    item = _strip_schema_version(
-        _mapping(record, context), SCHEMA_TRACE, context
-    )
+    item = _mapping(record, context)
     _check_keys(
         item,
         {
+            "schema_version",
             "trace_id",
+            "run_id",
             "question_id",
-            "answer_mode",
-            "status",
-            "raw_answer",
+            "gold_sha256",
+            "config",
+            "baseline",
+            "result",
             "evidence",
-            "citation_ids",
-            "execution",
+            "candidate_evidence",
+            "error",
         },
-        {"candidate_evidence", "error", "metadata"},
+        set(),
         context,
     )
+    if item["schema_version"] != SCHEMA_TRACE:
+        _error(context, f"schema_version must be {SCHEMA_TRACE!r}")
     trace_id = _nonempty_str(item["trace_id"], "trace.trace_id")
+    run_id = _nonempty_str(item["run_id"], "trace.run_id")
     question_id = _nonempty_str(item["question_id"], "trace.question_id")
-    answer_mode = item["answer_mode"]
-    if answer_mode not in ANSWER_MODES:
-        _error(context, "invalid answer_mode")
-    status = item["status"]
+    gold_sha256 = _hex64(item["gold_sha256"], "trace.gold_sha256")
+    config = _mapping(item["config"], "trace.config")
+    baseline = _mapping(item["baseline"], "trace.baseline")
+    result = _mapping(item["result"], "trace.result")
+    _check_keys(result, {"status", "raw_answer", "reason"}, set(), "trace.result")
+    status = result["status"]
     if status not in ANSWER_STATUSES:
-        _error(context, "invalid status")
-    raw_answer = item["raw_answer"]
+        _error("trace.result", "invalid status")
+    raw_answer = result["raw_answer"]
     if not isinstance(raw_answer, str):
-        _error(context, "raw_answer must be a string")
+        _error("trace.result", "raw_answer must be a string")
+    reason = result["reason"]
+    if not isinstance(reason, str):
+        _error("trace.result", "reason must be a string")
     evidence_raw = _list(item["evidence"], "trace.evidence")
-    evidence: list[EvidenceSnapshot] = []
-    seen_ids: set[str] = set()
+    evidence: list[TraceEvidence] = []
+    seen_citation_ids: set[int] = set()
     for index, raw_ev in enumerate(evidence_raw):
-        ev = _parse_evidence(
-            raw_ev, f"trace.evidence[{index}]", index=index
-        )
-        if ev.evidence_id in seen_ids:
+        ev = _parse_trace_evidence(raw_ev, f"trace.evidence[{index}]")
+        if ev.citation_id in seen_citation_ids:
             _error(
                 f"trace.evidence[{index}]",
-                f"duplicate evidence_id {ev.evidence_id!r}",
+                f"duplicate citation_id {ev.citation_id!r}",
             )
-        seen_ids.add(ev.evidence_id)
+        seen_citation_ids.add(ev.citation_id)
         evidence.append(ev)
-    citation_ids_raw = _list(item["citation_ids"], "trace.citation_ids")
-    citation_ids: list[int] = []
-    for index, value in enumerate(citation_ids_raw):
-        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
-            _error(
-                f"trace.citation_ids[{index}]",
-                "citation IDs must be positive integers",
-            )
-        citation_ids.append(value)
-    execution = _mapping(item["execution"], "trace.execution")
-    _check_keys(
-        execution,
-        {"backend"},
-        {"model", "duration_ms", "started_at", "retriever", "generator", "retrieval_mode", "k", "max_pages", "chunks_per_page", "metadata"},
-        "trace.execution",
-    )
-    backend = _nonempty_str(execution["backend"], "trace.execution.backend")
-    execution = dict(execution)
-    execution["backend"] = backend
-    for key in ("model", "retriever", "generator", "started_at", "retrieval_mode"):
-        if key in execution and execution[key] is not None:
-            execution[key] = _nonempty_str(execution[key], f"trace.execution.{key}")
-    for key in ("duration_ms",):
-        if key in execution and execution[key] is not None:
-            value = execution[key]
-            if isinstance(value, bool) or not isinstance(value, (int, float)):
-                _error(f"trace.execution.{key}", "must be a number or null")
-            if value < 0 or not math.isfinite(value):
-                _error(f"trace.execution.{key}", "must be non-negative and finite")
-    for key in ("k", "max_pages", "chunks_per_page"):
-        if key in execution and execution[key] is not None:
-            value = execution[key]
-            if isinstance(value, bool) or not isinstance(value, int) or value < 1:
-                _error(f"trace.execution.{key}", "must be a positive integer or null")
-    if "metadata" in execution and execution["metadata"] is not None:
-        execution["metadata"] = _mapping(execution["metadata"], "trace.execution.metadata")
-    candidate_raw = item.get("candidate_evidence", None)
+    citation_ids = sorted(ev.citation_id for ev in evidence)
+    if citation_ids != list(range(1, len(evidence) + 1)):
+        _error("trace.evidence", "citation_id values must be contiguous from 1")
+    candidate_raw = item["candidate_evidence"]
     if candidate_raw is None:
         candidate_evidence = None
     else:
         candidate_list = _list(candidate_raw, "trace.candidate_evidence")
         candidate_evidence = []
-        seen_candidate_ids: set[str] = set()
-        for index, raw_ev in enumerate(candidate_list):
-            ev = _parse_evidence(
-                raw_ev, f"trace.candidate_evidence[{index}]"
+        for index, raw_candidate in enumerate(candidate_list):
+            candidate_evidence.append(
+                _parse_candidate(raw_candidate, f"trace.candidate_evidence[{index}]")
             )
-            if ev.evidence_id in seen_candidate_ids:
-                _error(
-                    f"trace.candidate_evidence[{index}]",
-                    f"duplicate evidence_id {ev.evidence_id!r}",
-                )
-            seen_candidate_ids.add(ev.evidence_id)
-            candidate_evidence.append(ev)
         candidate_evidence = tuple(candidate_evidence)
-    error = item.get("error")
-    if error is not None:
+    error = item["error"]
+    if error is None:
+        error = None
+    elif isinstance(error, str):
+        error = {"message": error}
+    else:
         error = _mapping(error, "trace.error")
-    metadata = item.get("metadata", {})
-    if metadata is None:
-        metadata = {}
-    metadata = _mapping(metadata, "trace.metadata")
     return Trace(
         trace_id=trace_id,
+        run_id=run_id,
         question_id=question_id,
-        answer_mode=answer_mode,
+        gold_sha256=gold_sha256,
+        config=config,
+        baseline=baseline,
         status=status,
         raw_answer=raw_answer,
+        reason=reason,
         evidence=tuple(evidence),
-        citation_ids=tuple(citation_ids),
-        execution=execution,
         candidate_evidence=candidate_evidence,
         error=error,
-        metadata=metadata,
     )
 
 
@@ -762,7 +695,7 @@ def parse_traces(records: Any) -> list[Trace]:
     traces: list[Trace] = []
     seen_trace_ids: set[str] = set()
     seen_question_ids: set[str] = set()
-    for index, record in enumerate(records):
+    for record in records:
         trace = _parse_trace(record)
         if trace.trace_id in seen_trace_ids:
             _error("traces", f"duplicate trace_id {trace.trace_id!r}")
@@ -776,63 +709,36 @@ def parse_traces(records: Any) -> list[Trace]:
 
 def _parse_claim(record: Any, context: str) -> ClaimAssessment:
     item = _mapping(record, context)
-    _check_keys(
-        item,
-        {"claim_id", "text", "label"},
-        {"evidence_sha256"},
-        context,
-    )
+    _check_keys(item, {"claim_id", "text", "support"}, set(), context)
     claim_id = _nonempty_str(item["claim_id"], f"{context}.claim_id")
     text = _nonempty_str(item["text"], f"{context}.text")
-    label = item["label"]
-    if label not in CLAIM_LABELS:
-        _error(context, "invalid claim label")
-    evidence = item.get("evidence_sha256", [])
-    if evidence is None:
-        evidence = []
-    evidence_list = _list(evidence, f"{context}.evidence_sha256")
-    evidence_sha: list[str] = []
-    for index, value in enumerate(evidence_list):
-        evidence_sha.append(
-            _hex64(value, f"{context}.evidence_sha256[{index}]")
-        )
-    return ClaimAssessment(
-        claim_id=claim_id,
-        text=text,
-        label=label,
-        evidence_sha256=tuple(evidence_sha),
-    )
+    support = item["support"]
+    if support not in CLAIM_SUPPORT_LABELS:
+        _error(context, "invalid claim support")
+    return ClaimAssessment(claim_id=claim_id, text=text, support=support)
 
 
-def _parse_citation_assessment(record: Any, context: str) -> CitationAssessment:
+def _parse_citation(record: Any, context: str) -> CitationAssessment:
     item = _mapping(record, context)
     _check_keys(
         item,
-        {"citation_id", "label", "evidence_sha256"},
-        {"evidence_id"},
+        {"claim_id", "citation_id", "evidence_sha256", "support"},
+        set(),
         context,
     )
-    citation_id = item["citation_id"]
-    if (
-        isinstance(citation_id, bool)
-        or not isinstance(citation_id, int)
-        or citation_id < 1
-    ):
-        _error(context, "citation_id must be a positive integer")
-    label = item["label"]
-    if label not in CITATION_LABELS:
-        _error(context, "invalid citation label")
-    evidence_sha = _hex64(
-        item["evidence_sha256"], f"{context}.evidence_sha256"
-    )
-    evidence_id = _optional_str(
-        item.get("evidence_id"), f"{context}.evidence_id"
-    )
+    claim_id = _nonempty_str(item["claim_id"], f"{context}.claim_id")
+    citation_id = _int(item["citation_id"], f"{context}.citation_id")
+    if citation_id < 1:
+        _error(context, "citation_id must be positive")
+    evidence_sha = _hex64(item["evidence_sha256"], f"{context}.evidence_sha256")
+    support = item["support"]
+    if support not in CITATION_SUPPORT_LABELS:
+        _error(context, "invalid citation support")
     return CitationAssessment(
+        claim_id=claim_id,
         citation_id=citation_id,
-        label=label,
         evidence_sha256=evidence_sha,
-        evidence_id=evidence_id,
+        support=support,
     )
 
 
@@ -841,141 +747,204 @@ def parse_assessments(records: Any) -> list[Assessment]:
         _error("assessments", "must be a list")
     assessments: list[Assessment] = []
     seen_assessment_ids: set[str] = set()
+    seen_trace_ids: set[str] = set()
     seen_question_ids: set[str] = set()
     for index, record in enumerate(records):
         context = f"assessment {index}"
-        item = _strip_schema_version(
-            _mapping(record, context), SCHEMA_ASSESSMENT, context
-        )
+        item = _mapping(record, context)
         _check_keys(
             item,
             {
+                "schema_version",
+                "assessment_id",
+                "trace_id",
                 "question_id",
-                "review_status",
-                "context_sufficiency",
-                "answer_correctness",
+                "reviewer_id",
+                "reviewed_at",
+                "context_sufficient",
+                "decision",
+                "answer_correct",
                 "claims",
                 "citations",
-                "secondary_errors",
+                "secondary_labels",
+                "notes",
             },
-            {"assessment_id", "metadata", "reviewer", "reviewed_at"},
+            set(),
             context,
         )
-        question_id = _nonempty_str(
-            item["question_id"], f"{context}.question_id"
-        )
-        review_status = item["review_status"]
-        if review_status not in REVIEW_STATUSES:
-            _error(context, "invalid review_status")
-        context_sufficiency = item["context_sufficiency"]
-        if context_sufficiency not in CONTEXT_LABELS:
-            _error(context, "invalid context_sufficiency")
-        answer_correctness = item["answer_correctness"]
-        if answer_correctness not in ANSWER_CORRECTNESS_LABELS:
-            _error(context, "invalid answer_correctness")
-        claims_raw = item["claims"]
-        if claims_raw is None:
-            claims = None
-        else:
-            claims_list = _list(claims_raw, f"{context}.claims")
-            claims = []
-            seen_claim_ids: set[str] = set()
-            for claim_index, raw_claim in enumerate(claims_list):
-                claim = _parse_claim(
-                    raw_claim, f"{context}.claims[{claim_index}]"
-                )
-                if claim.claim_id in seen_claim_ids:
-                    _error(
-                        f"{context}.claims[{claim_index}]",
-                        f"duplicate claim_id {claim.claim_id!r}",
-                    )
-                seen_claim_ids.add(claim.claim_id)
-                claims.append(claim)
-            claims = tuple(claims)
-        citations_raw = item["citations"]
-        if citations_raw is None:
-            citations = None
-        else:
-            citations_list = _list(citations_raw, f"{context}.citations")
-            citations = []
-            seen_citation_ids: set[int] = set()
-            for citation_index, raw_citation in enumerate(citations_list):
-                citation = _parse_citation_assessment(
-                    raw_citation, f"{context}.citations[{citation_index}]"
-                )
-                if citation.citation_id in seen_citation_ids:
-                    _error(
-                        f"{context}.citations[{citation_index}]",
-                        f"duplicate citation_id {citation.citation_id!r}",
-                    )
-                seen_citation_ids.add(citation.citation_id)
-                citations.append(citation)
-            citations = tuple(citations)
-        secondary_errors = _str_list(
-            item["secondary_errors"], f"{context}.secondary_errors"
-        )
-        assessment_id = _optional_str(
-            item.get("assessment_id"), f"{context}.assessment_id"
-        )
-        if assessment_id is not None:
-            if assessment_id in seen_assessment_ids:
-                _error(context, f"duplicate assessment_id {assessment_id!r}")
-            seen_assessment_ids.add(assessment_id)
+        if item["schema_version"] != SCHEMA_ASSESSMENT:
+            _error(context, f"schema_version must be {SCHEMA_ASSESSMENT!r}")
+        assessment_id = _nonempty_str(item["assessment_id"], f"{context}.assessment_id")
+        if assessment_id in seen_assessment_ids:
+            _error(context, f"duplicate assessment_id {assessment_id!r}")
+        seen_assessment_ids.add(assessment_id)
+        trace_id = _nonempty_str(item["trace_id"], f"{context}.trace_id")
+        if trace_id in seen_trace_ids:
+            _error(context, f"duplicate trace_id {trace_id!r}")
+        seen_trace_ids.add(trace_id)
+        question_id = _nonempty_str(item["question_id"], f"{context}.question_id")
         if question_id in seen_question_ids:
             _error(context, f"duplicate question_id {question_id!r}")
         seen_question_ids.add(question_id)
-        metadata = item.get("metadata", {})
-        if metadata is None:
-            metadata = {}
-        metadata = _mapping(metadata, f"{context}.metadata")
+        reviewer_id = _nonempty_str(item["reviewer_id"], f"{context}.reviewer_id")
+        reviewed_at = _nonempty_str(item["reviewed_at"], f"{context}.reviewed_at")
+        context_sufficient = item["context_sufficient"]
+        if context_sufficient not in CONTEXT_LABELS:
+            _error(context, "invalid context_sufficient")
+        decision = item["decision"]
+        if decision not in ASSESSMENT_DECISION_VALUES:
+            _error(context, "invalid decision")
+        answer_correct = item["answer_correct"]
+        if answer_correct not in ANSWER_CORRECT_LABELS:
+            _error(context, "invalid answer_correct")
+        claims_raw = _list(item["claims"], f"{context}.claims")
+        claims: list[ClaimAssessment] = []
+        seen_claim_ids: set[str] = set()
+        for claim_index, raw_claim in enumerate(claims_raw):
+            claim = _parse_claim(raw_claim, f"{context}.claims[{claim_index}]")
+            if claim.claim_id in seen_claim_ids:
+                _error(
+                    f"{context}.claims[{claim_index}]",
+                    f"duplicate claim_id {claim.claim_id!r}",
+                )
+            seen_claim_ids.add(claim.claim_id)
+            claims.append(claim)
+        citations_raw = _list(item["citations"], f"{context}.citations")
+        citations: list[CitationAssessment] = []
+        seen_pairs: set[tuple[str, int]] = set()
+        for citation_index, raw_citation in enumerate(citations_raw):
+            citation = _parse_citation(
+                raw_citation, f"{context}.citations[{citation_index}]"
+            )
+            pair = (citation.claim_id, citation.citation_id)
+            if pair in seen_pairs:
+                _error(
+                    f"{context}.citations[{citation_index}]",
+                    f"duplicate claim/citation pair {pair!r}",
+                )
+            seen_pairs.add(pair)
+            citations.append(citation)
+        secondary_labels = _list(item["secondary_labels"], f"{context}.secondary_labels")
+        secondary_tuple = tuple(
+            _nonempty_str(label, f"{context}.secondary_labels")
+            for label in secondary_labels
+        )
+        notes = _optional_str(item["notes"], f"{context}.notes")
         assessments.append(
             Assessment(
                 assessment_id=assessment_id,
+                trace_id=trace_id,
                 question_id=question_id,
-                review_status=review_status,
-                context_sufficiency=context_sufficiency,
-                answer_correctness=answer_correctness,
-                claims=claims,
-                citations=citations,
-                secondary_errors=tuple(sorted(set(secondary_errors))),
-                metadata=metadata,
+                reviewer_id=reviewer_id,
+                reviewed_at=reviewed_at,
+                context_sufficient=context_sufficient,
+                decision=decision,
+                answer_correct=answer_correct,
+                claims=tuple(claims),
+                citations=tuple(citations),
+                secondary_labels=tuple(sorted(set(secondary_tuple))),
+                notes=notes,
             )
         )
     return assessments
 
 
 def load_gold(path: str | Path) -> list[GoldQuestion]:
-    records = _load_dataset(Path(path), SCHEMA_GOLD, ("questions", "cases", "items"), "gold")
-    return parse_gold(records)
+    path = Path(path)
+    raw = _load_json_or_jsonl(path)
+    if len(raw) != 1 or not isinstance(raw[0], dict):
+        _error(str(path), "gold file must contain one JSON object")
+    document = raw[0]
+    repo_root = _resolve_repo_root(path)
+    # Verify corpus hashes and quotes when files are available.
+    corpus = document.get("corpus")
+    if isinstance(corpus, list):
+        for entry in corpus:
+            if not isinstance(entry, dict):
+                continue
+            source = entry.get("source")
+            sha = entry.get("sha256")
+            if isinstance(source, str) and isinstance(sha, str):
+                resolved = _resolve_source_path(source, repo_root)
+                if resolved.exists():
+                    actual = sha256_file(resolved)
+                    if actual != sha.lower():
+                        _error(str(path), f"corpus hash mismatch for {source}")
+    questions = document.get("questions")
+    if isinstance(questions, list):
+        for q in questions:
+            if not isinstance(q, dict):
+                continue
+            required = q.get("required_evidence")
+            if isinstance(required, list):
+                # Map document_id to source for quote verification.
+                doc_sources = {}
+                if isinstance(corpus, list):
+                    for entry in corpus:
+                        if isinstance(entry, dict):
+                            doc_sources[entry.get("document_id")] = entry.get("source")
+                for ev in required:
+                    if not isinstance(ev, dict):
+                        continue
+                    doc_id = ev.get("document_id")
+                    quote = ev.get("quote")
+                    source = doc_sources.get(doc_id)
+                    if isinstance(source, str) and isinstance(quote, str):
+                        resolved = _resolve_source_path(source, repo_root)
+                        if resolved.exists():
+                            text = resolved.read_text(encoding="utf-8")
+                            if quote not in text:
+                                _error(str(path), f"required evidence quote not found in {source}")
+    return parse_gold(document)
 
 
 def load_traces(path: str | Path) -> list[Trace]:
-    records = _load_dataset(Path(path), SCHEMA_TRACE, ("traces", "items", "cases"), "trace")
+    records = _load_json_or_jsonl(Path(path))
+    # _load_json_or_jsonl returns [payload] for a JSON object; unwrap if needed.
+    if len(records) == 1 and isinstance(records[0], dict) and "traces" in records[0]:
+        records = records[0]["traces"]
+    if len(records) == 1 and isinstance(records[0], dict) and "schema_version" in records[0] and "trace_id" not in records[0]:
+        # header-only object; shouldn't happen
+        pass
+    # Support JSON wrapper with "traces".
+    if isinstance(records, dict):
+        records = records.get("traces", [])
     return parse_traces(records)
 
 
 def load_assessments(path: str | Path) -> list[Assessment]:
-    records = _load_dataset(Path(path), SCHEMA_ASSESSMENT, ("assessments", "items", "cases"), "assessment")
+    records = _load_json_or_jsonl(Path(path))
+    if len(records) == 1 and isinstance(records[0], dict) and "assessments" in records[0]:
+        records = records[0]["assessments"]
+    if isinstance(records, dict):
+        records = records.get("assessments", [])
     return parse_assessments(records)
 
 
 def metric(numerator: int, denominator: int) -> dict[str, Any]:
+    if denominator == 0:
+        return {
+            "numerator": numerator,
+            "denominator": denominator,
+            "value": None,
+            "status": "not_applicable",
+        }
     return {
         "numerator": numerator,
         "denominator": denominator,
-        "value": None if denominator == 0 else round(numerator / denominator, 6),
-        "status": "assessed" if denominator > 0 else "unassessed",
+        "value": round(numerator / denominator, 6),
+        "status": "assessed",
     }
 
 
-def _observed_decision(status: str) -> str:
+def _observed_decision(status: str) -> str | None:
     if status == "produced":
-        return "answer"
+        return "answered"
     if status == "invalid_output":
-        return "invalid"
-    if status == "backend_error":
-        return "error"
-    return "abstain"
+        return "answered"
+    if status in ABSTENTION_STATUSES:
+        return "abstained"
+    return None
 
 
 def _parse_citations(text: str, evidence_count: int) -> tuple[list[int], list[str]]:
@@ -1003,152 +972,107 @@ def _parse_citations(text: str, evidence_count: int) -> tuple[list[int], list[st
     return ids, ordered
 
 
-def _integrity_errors(
-    gold: GoldQuestion,
-    trace: Trace,
-    assessment: Assessment | None,
-) -> list[str]:
-    errors: list[str] = []
-    docs_by_source = {doc.source: doc for doc in gold.documents}
-    required_by_id = {req.evidence_id: req for req in gold.required_evidence}
-    required_hashes = {(req.source, req.sha256) for req in gold.required_evidence}
-
-    for evidence in trace.evidence:
-        recomputed = sha256_text(evidence.text)
-        if recomputed != evidence.text_sha256:
-            errors.append(
-                f"evidence {evidence.evidence_id}: text SHA-256 mismatch"
-            )
-        doc = docs_by_source.get(evidence.source)
-        if doc is None:
-            errors.append(
-                f"evidence {evidence.evidence_id}: source not declared in gold"
-            )
-        else:
-            if evidence.source_sha256 != doc.sha256:
-                errors.append(
-                    f"evidence {evidence.evidence_id}: source SHA-256 mismatch"
-                )
-            if evidence.document_id is not None and evidence.document_id != doc.document_id:
-                errors.append(
-                    f"evidence {evidence.evidence_id}: document_id mismatch"
-                )
-        if evidence.evidence_id in required_by_id:
-            req = required_by_id[evidence.evidence_id]
-            if recomputed != req.sha256:
-                errors.append(
-                    f"evidence {evidence.evidence_id}: required evidence snapshot mismatch"
-                )
-            if evidence.source != req.source:
-                errors.append(
-                    f"evidence {evidence.evidence_id}: required evidence source mismatch"
-                )
-
-    if trace.candidate_evidence is not None:
-        for evidence in trace.candidate_evidence:
-            recomputed = sha256_text(evidence.text)
-            if recomputed != evidence.text_sha256:
-                errors.append(
-                    f"candidate {evidence.evidence_id}: text SHA-256 mismatch"
-                )
-            doc = docs_by_source.get(evidence.source)
-            if doc is None:
-                errors.append(
-                    f"candidate {evidence.evidence_id}: source not declared in gold"
-                )
-            else:
-                if evidence.source_sha256 != doc.sha256:
-                    errors.append(
-                        f"candidate {evidence.evidence_id}: source SHA-256 mismatch"
-                    )
-                if evidence.document_id is not None and evidence.document_id != doc.document_id:
-                    errors.append(
-                        f"candidate {evidence.evidence_id}: document_id mismatch"
-                    )
-            if evidence.evidence_id in required_by_id:
-                req = required_by_id[evidence.evidence_id]
-                if recomputed != req.sha256:
-                    errors.append(
-                        f"candidate {evidence.evidence_id}: required evidence snapshot mismatch"
-                    )
-
-    if assessment is not None and assessment.review_status == "reviewed":
-        if trace.status in {"produced", "invalid_output"}:
-            for claim in assessment.claims or ():
-                if claim.text not in trace.raw_answer:
-                    errors.append(
-                        f"claim {claim.claim_id}: text not found in generated output"
-                    )
-                for evidence_sha in claim.evidence_sha256:
-                    known_hashes = {sha256_text(ev.text) for ev in trace.evidence}
-                    known_hashes.update(req.sha256 for req in gold.required_evidence)
-                    if evidence_sha not in known_hashes:
-                        errors.append(
-                            f"claim {claim.claim_id}: evidence snapshot not found"
-                        )
-        if trace.answer_mode == "generated" and trace.evidence:
-            cited_ids = set(_parse_citations(trace.raw_answer, len(trace.evidence))[0])
-            if trace.citation_ids and _parse_citations(trace.raw_answer, len(trace.evidence))[1] == []:
-                parsed_ids = _parse_citations(trace.raw_answer, len(trace.evidence))[0]
-                if parsed_ids != list(trace.citation_ids):
-                    errors.append("citation_ids do not match generated output")
-            for citation in assessment.citations or ():
-                if citation.citation_id not in cited_ids and _parse_citations(trace.raw_answer, len(trace.evidence))[1] == []:
-                    errors.append(
-                        f"citation {citation.citation_id}: not cited in generated output"
-                    )
-                if citation.citation_id <= len(trace.evidence):
-                    evidence = trace.evidence[citation.citation_id - 1]
-                    if citation.evidence_sha256 != sha256_text(evidence.text):
-                        errors.append(
-                            f"citation {citation.citation_id}: evidence snapshot mismatch"
-                        )
-                    if citation.evidence_id is not None and citation.evidence_id != evidence.evidence_id:
-                        errors.append(
-                            f"citation {citation.citation_id}: evidence_id mismatch"
-                        )
-    errors = sorted(set(errors))
-    return errors
-
-
 def _covered_required_ids(
     required: tuple[RequiredEvidence, ...],
-    evidence: tuple[EvidenceSnapshot, ...],
+    evidence: tuple[TraceEvidence, ...],
 ) -> set[str]:
     covered: set[str] = set()
     for req in required:
         for ev in evidence:
-            if ev.source == req.source and sha256_text(ev.text) == req.sha256:
+            if ev.document_id == req.document_id and ev.chunk_id == req.chunk_id:
                 covered.add(req.evidence_id)
                 break
     return covered
+
+
+def _covered_candidate_ids(
+    required: tuple[RequiredEvidence, ...],
+    candidate: tuple[CandidateEvidence, ...] | None,
+) -> set[str]:
+    if candidate is None:
+        return set()
+    covered: set[str] = set()
+    for req in required:
+        for cand in candidate:
+            if cand.document_id == req.document_id and cand.chunk_id == req.chunk_id:
+                covered.add(req.evidence_id)
+                break
+    return covered
+
+
+def _integrity_errors(
+    gold: GoldQuestion,
+    trace: Trace,
+    assessment: Assessment | None,
+    gold_sha256: str | None,
+) -> list[str]:
+    errors: list[str] = []
+
+    if gold_sha256 is not None and trace.gold_sha256 != gold_sha256:
+        errors.append("gold_sha256 mismatch")
+
+    docs_by_id = None  # not needed; corpus not passed here
+
+    for evidence in trace.evidence:
+        if sha256_text(evidence.text) != evidence.text_sha256:
+            errors.append(
+                f"evidence {evidence.citation_id}: text SHA-256 mismatch"
+            )
+
+    if assessment is not None:
+        trace_evidence_by_id = {ev.citation_id: ev for ev in trace.evidence}
+        claim_ids = {claim.claim_id for claim in assessment.claims}
+        if trace.status in {"produced", "invalid_output"}:
+            for claim in assessment.claims:
+                if not _text_present(claim.text, trace.raw_answer):
+                    errors.append(f"claim {claim.claim_id}: text not found in generated output")
+        for citation in assessment.citations:
+            if citation.claim_id not in claim_ids:
+                errors.append(
+                    f"citation ({citation.claim_id}, {citation.citation_id}): unknown claim_id"
+                )
+            evidence = trace_evidence_by_id.get(citation.citation_id)
+            if evidence is None:
+                errors.append(
+                    f"citation {citation.citation_id}: citation_id not in trace evidence"
+                )
+            else:
+                if citation.evidence_sha256 != evidence.text_sha256:
+                    errors.append(
+                        f"citation {citation.citation_id}: evidence snapshot mismatch"
+                    )
+            # If structural syntax valid, citation should be cited in answer.
+        cited_ids = set(_parse_citations(trace.raw_answer, len(trace.evidence))[0])
+        if cited_ids and _parse_citations(trace.raw_answer, len(trace.evidence))[1] == []:
+            for citation in assessment.citations:
+                if citation.citation_id not in cited_ids:
+                    errors.append(
+                        f"citation {citation.citation_id}: not cited in generated output"
+                    )
+
+    errors = sorted(set(errors))
+    return errors
 
 
 def _evaluate_case(
     gold: GoldQuestion,
     trace: Trace | None,
     assessment: Assessment | None,
+    gold_sha256: str | None,
 ) -> dict[str, Any]:
-    integrity = ["trace missing"] if trace is None else []
-    if trace is not None:
-        integrity = _integrity_errors(gold, trace, assessment)
+    integrity = [] if trace is None else _integrity_errors(gold, trace, assessment, gold_sha256)
     integrity_failed = bool(integrity)
 
-    observed = None
-    trace_status = None
-    answer_mode = None
-    trace_id = None
+    trace_id = trace.trace_id if trace is not None else None
     assessment_id = assessment.assessment_id if assessment is not None else None
+    trace_status = trace.status if trace is not None else None
+    generator_type = None
     if trace is not None:
-        trace_id = trace.trace_id
-        trace_status = trace.status
-        answer_mode = trace.answer_mode
-        observed = _observed_decision(trace.status)
+        generator_type = "extractive" if trace.config.get("generator") == "extractive" else "generated"
+    observed = _observed_decision(trace_status) if trace_status is not None else None
 
     gold_reviewed = gold.review_status == "reviewed"
-    assessment_reviewed = (
-        assessment is not None and assessment.review_status == "reviewed"
-    )
+    assessment_present = assessment is not None
     trace_exists = trace is not None
 
     # Decision metrics.
@@ -1156,21 +1080,21 @@ def _evaluate_case(
     false_abstention: bool | None = None
     false_answer: bool | None = None
     correct_abstention: bool | None = None
-    if gold_reviewed and trace_exists and observed in {"answer", "abstain"}:
+    if gold_reviewed and trace_exists and observed in {"answered", "abstained"}:
         if gold.expected_decision == "answer":
-            decision_correct = observed == "answer"
-            false_abstention = observed == "abstain"
+            decision_correct = observed == "answered"
+            false_abstention = observed == "abstained"
         else:
-            decision_correct = observed == "abstain"
-            false_answer = observed == "answer"
-            correct_abstention = observed == "abstain"
+            decision_correct = observed == "abstained"
+            false_answer = observed == "answered"
+            correct_abstention = observed == "abstained"
 
     # Evidence coverage.
     required_count = len(gold.required_evidence)
     required_ids = {req.evidence_id for req in gold.required_evidence}
     covered_ids: set[str] = set()
-    candidate_available = False
     candidate_covered_ids: set[str] = set()
+    candidate_available = False
     missing_required_ids: list[str] = []
     candidate_missing_ids: list[str] = []
     if trace_exists:
@@ -1178,142 +1102,132 @@ def _evaluate_case(
         missing_required_ids = sorted(required_ids - covered_ids)
         if trace.candidate_evidence is not None:
             candidate_available = True
-            candidate_covered_ids = _covered_required_ids(
+            candidate_covered_ids = _covered_candidate_ids(
                 gold.required_evidence, trace.candidate_evidence
             )
             candidate_missing_ids = sorted(required_ids - candidate_covered_ids)
 
-    coverage_metric = (
-        metric(len(covered_ids), required_count)
-        if trace_exists
-        else None
-    )
-    candidate_coverage_metric = (
-        metric(len(candidate_covered_ids), required_count)
-        if trace_exists and candidate_available
-        else None
-    )
+    if required_count == 0:
+        coverage_metric = metric(0, 0)
+        coverage_metric["status"] = "not_applicable"
+        candidate_coverage_metric = metric(0, 0)
+        candidate_coverage_metric["status"] = "not_applicable"
+    else:
+        coverage_metric = metric(len(covered_ids), required_count) if trace_exists else None
+        candidate_coverage_metric = (
+            metric(len(candidate_covered_ids), required_count)
+            if trace_exists and candidate_available
+            else None
+        )
 
     # Assessment labels.
     context_label = None
     correctness_label = None
-    if assessment_reviewed and assessment is not None:
-        context_label = assessment.context_sufficiency
-        if context_label == "unknown":
-            context_label = None
-        correctness_label = assessment.answer_correctness
-        if correctness_label == "unknown":
-            correctness_label = None
-        if trace_exists and trace.status in ABSTENTION_STATUSES:
-            if correctness_label in {"correct", "incorrect"}:
-                correctness_label = None
-        if trace_exists and trace.status == "produced" and correctness_label == "not_applicable":
-            correctness_label = None
+    if assessment is not None:
+        context_label = assessment.context_sufficient
+        correctness_label = assessment.answer_correct
+        if gold.expected_decision != "answer" and context_label == "not_applicable":
+            pass
 
     # Claims.
     claim_items: list[dict[str, Any]] = []
-    claim_assessed = 0
+    claim_reviewed = 0
     claim_supported = 0
     claim_unsupported = 0
     claim_contradicted = 0
     claim_unassessed = 0
-    if assessment_reviewed and assessment is not None and trace_exists and trace.status in {"produced", "invalid_output"}:
-        for claim in sorted(assessment.claims or (), key=lambda item: item.claim_id):
+    if assessment is not None:
+        for claim in assessment.claims:
             claim_items.append(
                 {
                     "claim_id": claim.claim_id,
                     "text": claim.text,
-                    "label": claim.label,
+                    "support": claim.support,
                 }
             )
-            if claim.label == "supported":
-                claim_assessed += 1
+            if claim.support == "supported":
+                claim_reviewed += 1
                 claim_supported += 1
-            elif claim.label == "unsupported":
-                claim_assessed += 1
+            elif claim.support == "unsupported":
+                claim_reviewed += 1
                 claim_unsupported += 1
-            elif claim.label == "contradicted":
-                claim_assessed += 1
+            elif claim.support == "contradicted":
+                claim_reviewed += 1
                 claim_contradicted += 1
             else:
                 claim_unassessed += 1
-    claim_faithfulness = metric(claim_supported, claim_assessed)
 
     # Citations.
-    generated = answer_mode == "generated"
+    generated = generator_type == "generated"
     citation_requirement = "required" if generated else "not_applicable"
     cited_ids: list[int] = []
     syntax_errors: list[str] = []
     structural_validity = "not_applicable"
-    if generated and trace_exists and trace_status in {"produced", "invalid_output"}:
+    if generated and trace_exists and trace.status in {"produced", "invalid_output"}:
         cited_ids, syntax_errors = _parse_citations(
             trace.raw_answer, len(trace.evidence)
         )
         structural_validity = "valid" if not syntax_errors else "invalid"
+    elif generated and trace_exists:
+        structural_validity = "not_applicable"
     unique_cited = sorted(set(cited_ids))
-    recorded_ids = list(trace.citation_ids) if trace_exists else []
 
     # Citation support.
-    citation_assessed = 0
+    citation_reviewed = 0
     citation_supported = 0
-    citation_unsupported_ids: list[int] = []
+    citation_does_not_support_ids: list[int] = []
     citation_irrelevant_ids: list[int] = []
-    citation_contradicted_ids: list[int] = []
     citation_unassessed_ids: list[int] = []
-    if (
-        generated
-        and structural_validity == "valid"
-        and assessment_reviewed
-        and assessment is not None
-        and trace_exists
-    ):
-        by_id = {item.citation_id: item for item in (assessment.citations or ())}
-        for citation_id in unique_cited:
-            if citation_id not in by_id:
-                citation_unassessed_ids.append(citation_id)
-                continue
-            entry = by_id[citation_id]
-            if entry.label == "supported":
-                citation_assessed += 1
+    citation_pairs: Any = "not_applicable"
+    if generated and assessment is not None and structural_validity == "valid":
+        by_pair = {(c.claim_id, c.citation_id): c for c in assessment.citations}
+        reviewed_count = len(assessment.citations)
+        supported_count = sum(
+            1 for c in assessment.citations if c.support == "supports"
+        )
+        citation_pairs = {"reviewed": reviewed_count, "supported": supported_count}
+        trace_evidence_by_id = {ev.citation_id: ev for ev in trace.evidence}
+        for citation in assessment.citations:
+            evidence = trace_evidence_by_id.get(citation.citation_id)
+            if citation.support == "supports":
+                citation_reviewed += 1
                 citation_supported += 1
-            elif entry.label == "unsupported":
-                citation_assessed += 1
-                citation_unsupported_ids.append(citation_id)
-            elif entry.label == "irrelevant":
-                citation_assessed += 1
-                citation_irrelevant_ids.append(citation_id)
-            elif entry.label == "contradicted":
-                citation_assessed += 1
-                citation_contradicted_ids.append(citation_id)
+            elif citation.support == "does_not_support":
+                citation_reviewed += 1
+                citation_does_not_support_ids.append(citation.citation_id)
+            elif citation.support == "irrelevant":
+                citation_reviewed += 1
+                citation_irrelevant_ids.append(citation.citation_id)
             else:
-                citation_unassessed_ids.append(citation_id)
-    citation_support_metric = metric(citation_supported, citation_assessed)
+                citation_unassessed_ids.append(citation.citation_id)
+    elif generated and assessment is not None and structural_validity == "invalid":
+        citation_pairs = "not_applicable"
+    elif not generated:
+        citation_pairs = "not_applicable"
+
+    # Citation structural metric denominator handled in aggregates.
 
     # Failure detection.
     failure_reasons: list[str] = []
     unassessed_reasons: list[str] = []
     stage_candidates: list[str] = []
+    evidence_stage: str | None = None
 
     if integrity_failed:
         failure_reasons.append("integrity_failure")
 
     if not trace_exists:
         unassessed_reasons.append("missing_trace")
-
     if not gold_reviewed:
         unassessed_reasons.append("gold_unreviewed")
-
     if assessment is None:
         unassessed_reasons.append("missing_assessment")
-    elif not assessment_reviewed:
-        unassessed_reasons.append("assessment_unreviewed")
 
     if trace_exists and trace.status == "backend_error":
         failure_reasons.append("backend_error")
         stage_candidates.append("backend")
 
     # Required evidence stage attribution.
-    evidence_stage: str | None = None
     if trace_exists and missing_required_ids:
         if candidate_available:
             if candidate_missing_ids:
@@ -1332,20 +1246,21 @@ def _evaluate_case(
         failure_reasons.append("context_insufficient")
         if evidence_stage is None:
             stage_candidates.append("unknown")
-    if context_label is None and assessment_reviewed:
+    if context_label is None and assessment is not None:
         unassessed_reasons.append("context_sufficiency_unassessed")
-    if assessment is None or not assessment_reviewed:
+    if assessment is None:
         pass
-    elif assessment_reviewed and assessment.context_sufficiency == "unknown":
+    elif assessment.context_sufficient == "unknown":
         unassessed_reasons.append("context_sufficiency_unassessed")
 
     # Decision failures.
-    if gold.expected_decision == "answer" and observed == "abstain":
-        failure_reasons.append("false_abstention")
-        stage_candidates.append("generation")
-    if gold.expected_decision == "abstain" and observed == "answer":
-        failure_reasons.append("false_answer")
-        stage_candidates.append("generation")
+    if assessment is not None:
+        if gold.expected_decision == "answer" and observed == "abstained":
+            failure_reasons.append("false_abstention")
+            stage_candidates.append("generation")
+        if gold.expected_decision == "abstain" and observed == "answered":
+            failure_reasons.append("false_answer")
+            stage_candidates.append("generation")
 
     # Status-based failures.
     if trace_exists and trace.status == "invalid_output":
@@ -1376,59 +1291,36 @@ def _evaluate_case(
 
     # Citation support.
     citation_support_failed = False
-    if (
-        generated
-        and structural_validity == "valid"
-        and citation_unsupported_ids
-    ):
-        citation_support_failed = True
-        failure_reasons.append("citation_unsupported")
-    if (
-        generated
-        and structural_validity == "valid"
-        and citation_irrelevant_ids
-    ):
-        citation_support_failed = True
-        failure_reasons.append("citation_irrelevant")
-    if (
-        generated
-        and structural_validity == "valid"
-        and citation_contradicted_ids
-    ):
-        citation_support_failed = True
-        failure_reasons.append("citation_contradicted")
+    if generated and structural_validity == "valid":
+        if citation_does_not_support_ids:
+            citation_support_failed = True
+            failure_reasons.append("citation_does_not_support")
+        if citation_irrelevant_ids:
+            citation_support_failed = True
+            failure_reasons.append("citation_irrelevant")
     if citation_support_failed:
         stage_candidates.append("citation")
 
     # Unassessed reasons.
     if gold.expected_decision == "answer":
-        if correctness_label is None and assessment_reviewed:
+        if correctness_label is None and assessment is not None:
             unassessed_reasons.append("answer_correctness_unassessed")
-        if claim_assessed == 0 and assessment_reviewed and trace_exists:
+        if assessment is not None and not assessment.claims:
             unassessed_reasons.append("claims_unassessed")
         if claim_unassessed > 0:
             unassessed_reasons.append("claims_unassessed")
         if generated and structural_validity == "valid" and citation_unassessed_ids:
             unassessed_reasons.append("citation_support_unassessed")
-        if generated and structural_validity == "valid" and not unique_cited:
-            # missing citations would already be structural invalid
-            pass
-        if generated and structural_validity == "valid" and unique_cited and citation_assessed == 0 and assessment_reviewed:
+        if generated and structural_validity == "valid" and unique_cited and citation_reviewed == 0 and assessment is not None:
             unassessed_reasons.append("citation_support_unassessed")
-    if assessment is None or not assessment_reviewed:
+    if assessment is None:
         pass
-
-    if gold.expected_decision == "answer" and assessment_reviewed and assessment is not None and assessment.claims is None:
-        if "claims_unassessed" not in unassessed_reasons:
-            unassessed_reasons.append("claims_unassessed")
-    if gold.expected_decision == "answer" and assessment_reviewed and assessment is not None and assessment.citations is None and generated:
-        if "citation_support_unassessed" not in unassessed_reasons and structural_validity == "valid" and unique_cited:
-            unassessed_reasons.append("citation_support_unassessed")
 
     failure_reasons = sorted(set(failure_reasons))
     unassessed_reasons = sorted(set(unassessed_reasons))
 
-    # Determine stage.
+    prefer_unknown = context_label == "insufficient" and not missing_required_ids
+    # Stage selection.
     stage: str | None = None
     if integrity_failed:
         stage = "unknown"
@@ -1440,6 +1332,8 @@ def _evaluate_case(
         elif "context_assembly" in stage_candidates:
             stage = "context_assembly"
         elif evidence_stage == "unknown":
+            stage = "unknown"
+        elif prefer_unknown:
             stage = "unknown"
         elif "generation" in stage_candidates:
             stage = "generation"
@@ -1457,7 +1351,7 @@ def _evaluate_case(
     if (
         gold_reviewed
         and trace_exists
-        and assessment_reviewed
+        and assessment is not None
         and not integrity_failed
         and not failure_reasons
         and not unassessed_reasons
@@ -1465,35 +1359,35 @@ def _evaluate_case(
         if gold.expected_decision == "answer":
             if (
                 trace.status == "produced"
-                and observed == "answer"
+                and observed == "answered"
                 and decision_correct is True
                 and not missing_required_ids
                 and context_label == "sufficient"
                 and correctness_label == "correct"
-                and claim_assessed > 0
+                and claim_reviewed > 0
                 and claim_unassessed == 0
                 and claim_unsupported == 0
                 and claim_contradicted == 0
             ):
-                if answer_mode == "extractive":
+                if generator_type == "extractive":
                     success = True
                 else:
                     if (
                         structural_validity == "valid"
                         and len(unique_cited) > 0
-                        and citation_assessed == len(unique_cited)
-                        and not citation_unsupported_ids
+                        and citation_reviewed == len(assessment.citations)
+                        and citation_supported == len(assessment.citations)
+                        and not citation_does_not_support_ids
                         and not citation_irrelevant_ids
-                        and not citation_contradicted_ids
                         and not citation_unassessed_ids
                     ):
                         success = True
         else:
             if (
                 trace.status in ABSTENTION_STATUSES
-                and observed == "abstain"
+                and observed == "abstained"
                 and decision_correct is True
-                and context_label is not None
+                and context_label in {"sufficient", "insufficient", "not_applicable"}
             ):
                 success = True
 
@@ -1507,25 +1401,29 @@ def _evaluate_case(
     elif unassessed_reasons:
         outcome = "unassessed"
     else:
-        # No explicit failure but success checks not met.
         outcome = "unassessed"
         if not unassessed_reasons:
             unassessed_reasons = ["success_criteria_not_met"]
             unassessed_reasons = sorted(set(unassessed_reasons))
 
-    if outcome == "unassessed" and stage is None:
+    if outcome in {"unassessed", "invalid"} and stage is None:
         stage = "unknown"
     if outcome == "success":
         stage = None
 
-    # If no failure but unassessed, stage unknown.
-    if outcome in {"unassessed", "invalid"}:
-        if stage is None:
-            stage = "unknown"
+    abstention_error = "not_assessed"
+    if assessment is not None:
+        if false_abstention:
+            abstention_error = "false_abstention"
+        elif false_answer:
+            abstention_error = "false_answer"
+        else:
+            abstention_error = "none"
 
-    claim_faithfulness_value = claim_faithfulness
-    if claim_assessed == 0:
-        claim_faithfulness_value = metric(0, 0)
+    coverage_complete = required_count > 0 and len(covered_ids) == required_count
+    coverage_complete_but_context_insufficient = bool(
+        coverage_complete and context_label == "insufficient"
+    )
 
     case = {
         "question_id": gold.question_id,
@@ -1536,7 +1434,7 @@ def _evaluate_case(
         "expected_decision": gold.expected_decision,
         "observed_decision": observed,
         "trace_status": trace_status,
-        "answer_mode": answer_mode,
+        "generator_type": generator_type,
         "outcome": outcome,
         "failure_stage": stage,
         "failure_reasons": failure_reasons,
@@ -1564,31 +1462,36 @@ def _evaluate_case(
         },
         "context_sufficiency": context_label,
         "answer_correctness": correctness_label,
-        "claims": {
+        "claims": None if assessment is None else {
             "items": claim_items,
-            "assessed_count": claim_assessed,
+            "reviewed_count": claim_reviewed,
             "supported_count": claim_supported,
             "unsupported_count": claim_unsupported,
             "contradicted_count": claim_contradicted,
             "unassessed_count": claim_unassessed,
-            "faithfulness": claim_faithfulness_value,
+            "faithfulness": metric(claim_supported, claim_reviewed),
         },
         "citations": {
             "requirement": citation_requirement,
             "structural_validity": structural_validity,
             "syntax_errors": syntax_errors,
             "cited_ids": cited_ids,
-            "recorded_ids": recorded_ids,
-            "assessed_count": citation_assessed,
+            "reviewed_count": citation_reviewed,
             "supported_count": citation_supported,
-            "unsupported_ids": citation_unsupported_ids,
+            "does_not_support_ids": citation_does_not_support_ids,
             "irrelevant_ids": citation_irrelevant_ids,
-            "contradicted_ids": citation_contradicted_ids,
             "unassessed_ids": citation_unassessed_ids,
-            "support": citation_support_metric,
+            "support": metric(citation_supported, citation_reviewed) if citation_reviewed or (generated and assessment is not None and structural_validity == "valid") else metric(0, 0),
+            "citation_pairs": citation_pairs,
         },
-        "secondary_errors": list(assessment.secondary_errors) if assessment_reviewed and assessment is not None else [],
+        "secondary_labels": list(assessment.secondary_labels) if assessment is not None else [],
+        "coverage_complete_but_context_insufficient": coverage_complete_but_context_insufficient,
+        "abstention_error": abstention_error,
     }
+    # Fix support metric status for zero denominators.
+    if case["citations"]["reviewed_count"] == 0:
+        case["citations"]["support"] = metric(0, 0)
+        case["citations"]["support"]["status"] = "not_applicable"
     return case
 
 
@@ -1596,6 +1499,7 @@ def evaluate_answer_quality(
     gold_questions: list[GoldQuestion],
     traces: list[Trace],
     assessments: list[Assessment],
+    gold_sha256: str | None = None,
 ) -> dict[str, Any]:
     if not isinstance(gold_questions, list) or not all(isinstance(item, GoldQuestion) for item in gold_questions):
         raise EvaluationError("gold_questions must be a list of GoldQuestion")
@@ -1613,7 +1517,11 @@ def evaluate_answer_quality(
         gold_by_id[gold.question_id] = gold
 
     trace_by_question = {}
+    trace_by_id = {}
     for trace in traces:
+        if trace.trace_id in trace_by_id:
+            raise EvaluationError(f"duplicate trace_id {trace.trace_id!r}")
+        trace_by_id[trace.trace_id] = trace
         if trace.question_id in trace_by_question:
             raise EvaluationError(f"duplicate trace question_id {trace.question_id!r}")
         if trace.question_id not in gold_by_id:
@@ -1621,20 +1529,25 @@ def evaluate_answer_quality(
         trace_by_question[trace.question_id] = trace
 
     assessment_by_question = {}
+    assessment_by_trace = {}
     for assessment in assessments:
+        if assessment.assessment_id in assessment_by_trace and False:
+            pass
         if assessment.question_id in assessment_by_question:
             raise EvaluationError(f"duplicate assessment question_id {assessment.question_id!r}")
         if assessment.question_id not in gold_by_id:
             raise EvaluationError(f"assessment references unknown question_id {assessment.question_id!r}")
+        if assessment.trace_id not in trace_by_id:
+            raise EvaluationError(f"assessment references unknown trace_id {assessment.trace_id!r}")
         assessment_by_question[assessment.question_id] = assessment
+        assessment_by_trace[assessment.trace_id] = assessment
 
     cases = []
     for gold in sorted(gold_questions, key=lambda item: item.question_id):
         trace = trace_by_question.get(gold.question_id)
         assessment = assessment_by_question.get(gold.question_id)
-        cases.append(_evaluate_case(gold, trace, assessment))
+        cases.append(_evaluate_case(gold, trace, assessment, gold_sha256))
 
-    # Aggregates.
     total = len(cases)
     outcome_counts = {"success": 0, "failure": 0, "unassessed": 0, "invalid": 0}
     for case in cases:
@@ -1661,25 +1574,23 @@ def evaluate_answer_quality(
             continue
         if case["integrity"]["status"] == "failed":
             continue
-        decision = case["decision"]
         observed = case["observed_decision"]
-        if observed in {"answer", "abstain"}:
+        if observed in {"answered", "abstained"}:
             decision_den += 1
-            if decision["correct"] is True:
+            if case["decision"]["correct"] is True:
                 decision_num += 1
-        if case["expected_decision"] == "answer" and observed in {"answer", "abstain"}:
+        if case["expected_decision"] == "answer" and observed in {"answered", "abstained"}:
             false_abstention_den += 1
-            if decision["false_abstention"] is True:
+            if case["decision"]["false_abstention"] is True:
                 false_abstention_num += 1
-        if case["expected_decision"] == "abstain" and observed in {"answer", "abstain"}:
+        if case["expected_decision"] == "abstain" and observed in {"answered", "abstained"}:
             false_answer_den += 1
-            if decision["false_answer"] is True:
+            if case["decision"]["false_answer"] is True:
                 false_answer_num += 1
             correct_abstention_den += 1
-            if decision["correct_abstention"] is True:
+            if case["decision"]["correct_abstention"] is True:
                 correct_abstention_num += 1
 
-    # Required evidence coverage.
     req_cov_num = 0
     req_cov_den = 0
     candidate_cov_num = 0
@@ -1699,7 +1610,6 @@ def evaluate_answer_quality(
             candidate_cov_num += required_count - missing_candidate
             candidate_cov_den += required_count
 
-    # Context sufficiency.
     context_num = 0
     context_den = 0
     for case in cases:
@@ -1709,13 +1619,11 @@ def evaluate_answer_quality(
             continue
         if case["integrity"]["status"] == "failed":
             continue
-        # Only reviewed assessments expose labels; context_sufficiency None if unreviewed.
         if case["context_sufficiency"] in {"sufficient", "insufficient"}:
             context_den += 1
             if case["context_sufficiency"] == "sufficient":
                 context_num += 1
 
-    # Answer correctness.
     correctness_num = 0
     correctness_den = 0
     for case in cases:
@@ -1730,9 +1638,8 @@ def evaluate_answer_quality(
             if case["answer_correctness"] == "correct":
                 correctness_num += 1
 
-    # Claims.
     claim_supported_total = 0
-    claim_assessed_total = 0
+    claim_reviewed_total = 0
     claim_unsupported_total = 0
     claim_contradicted_total = 0
     claim_unassessed_total = 0
@@ -1744,13 +1651,13 @@ def evaluate_answer_quality(
         if case["integrity"]["status"] == "failed":
             continue
         claims = case["claims"]
-        claim_supported_total += claims["supported_count"]
-        claim_assessed_total += claims["assessed_count"]
-        claim_unsupported_total += claims["unsupported_count"]
-        claim_contradicted_total += claims["contradicted_count"]
-        claim_unassessed_total += claims["unassessed_count"]
+        if isinstance(claims, dict):
+            claim_supported_total += claims["supported_count"]
+            claim_reviewed_total += claims["reviewed_count"]
+            claim_unsupported_total += claims["unsupported_count"]
+            claim_contradicted_total += claims["contradicted_count"]
+            claim_unassessed_total += claims["unassessed_count"]
 
-    # Citations structural.
     citation_struct_num = 0
     citation_struct_den = 0
     for case in cases:
@@ -1766,7 +1673,6 @@ def evaluate_answer_quality(
             if citations["structural_validity"] == "valid":
                 citation_struct_num += 1
 
-    # Citation support.
     citation_support_num = 0
     citation_support_den = 0
     citation_unassessed_total = 0
@@ -1783,13 +1689,11 @@ def evaluate_answer_quality(
             continue
         if citations["structural_validity"] != "valid":
             continue
-        unique_cited = sorted(set(citations["cited_ids"]))
-        citation_cited_total += len(unique_cited)
+        citation_cited_total += len(set(citations["cited_ids"]))
         citation_support_num += citations["supported_count"]
-        citation_support_den += citations["assessed_count"]
+        citation_support_den += citations["reviewed_count"]
         citation_unassessed_total += len(citations["unassessed_ids"])
 
-    # Failure stages.
     failure_stages = {stage: 0 for stage in FAILURE_STAGES}
     for case in cases:
         if case["outcome"] == "failure":
@@ -1799,7 +1703,6 @@ def evaluate_answer_quality(
             else:
                 failure_stages["unknown"] += 1
 
-    # Secondary errors.
     secondary_counts: dict[str, int] = {}
     for case in cases:
         if case["gold_review_status"] != "reviewed":
@@ -1808,7 +1711,7 @@ def evaluate_answer_quality(
             continue
         if case["integrity"]["status"] == "failed":
             continue
-        for label in case["secondary_errors"]:
+        for label in case["secondary_labels"]:
             secondary_counts[label] = secondary_counts.get(label, 0) + 1
     secondary_counts = dict(sorted(secondary_counts.items()))
 
@@ -1825,27 +1728,27 @@ def evaluate_answer_quality(
         "candidate_evidence_coverage": metric(candidate_cov_num, candidate_cov_den),
         "context_sufficiency": metric(context_num, context_den),
         "answer_correctness": metric(correctness_num, correctness_den),
-        "claim_faithfulness": metric(claim_supported_total, claim_assessed_total),
-        "unsupported_claims": metric(claim_unsupported_total, claim_assessed_total),
-        "contradicted_claims": metric(claim_contradicted_total, claim_assessed_total),
+        "claim_faithfulness": metric(claim_supported_total, claim_reviewed_total),
+        "unsupported_claims": metric(claim_unsupported_total, claim_reviewed_total),
+        "contradicted_claims": metric(claim_contradicted_total, claim_reviewed_total),
         "claim_counts": {
             "supported": claim_supported_total,
             "unsupported": claim_unsupported_total,
             "contradicted": claim_contradicted_total,
             "unassessed": claim_unassessed_total,
-            "assessed": claim_assessed_total,
+            "reviewed": claim_reviewed_total,
         },
         "citation_structural_validity": metric(citation_struct_num, citation_struct_den),
         "citation_support": metric(citation_support_num, citation_support_den),
         "citation_support_unassessed": metric(citation_unassessed_total, citation_cited_total),
         "citation_counts": {
             "cited": citation_cited_total,
-            "assessed": citation_support_den,
+            "reviewed": citation_support_den,
             "supported": citation_support_num,
             "unassessed": citation_unassessed_total,
         },
         "failure_stages": failure_stages,
-        "secondary_errors": secondary_counts,
+        "secondary_labels": secondary_counts,
     }
 
     report = {
@@ -1859,6 +1762,7 @@ def evaluate_answer_quality(
             "gold_questions": len(gold_questions),
             "traces": len(traces),
             "assessments": len(assessments),
+            "gold_sha256": gold_sha256,
         },
         "notes": [
             "required_evidence_coverage measures annotated required evidence presence, not retrieval Recall@k.",

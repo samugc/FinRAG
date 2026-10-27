@@ -41,7 +41,9 @@ def main(argv: list[str] | None = None) -> int:
         gold = load_gold(args.gold)
         traces = load_traces(args.traces)
         assessments = load_assessments(args.assessments)
-        report = evaluate_answer_quality(gold, traces, assessments)
+        from finrag.answer_evaluation import sha256_file
+        gold_sha256 = sha256_file(Path(args.gold))
+        report = evaluate_answer_quality(gold, traces, assessments, gold_sha256=gold_sha256)
         path = write_report(report, args.out)
     except (EvaluationError, OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
