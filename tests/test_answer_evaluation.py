@@ -24,7 +24,7 @@ from finrag.answer_evaluation import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DATA_ROOT = Path(os.environ.get("FINRAG_EVAL_DATA_ROOT", str(REPO_ROOT.parent / "FinRAG-eval-data")))
+DATA_ROOT = Path(os.environ.get("FINRAG_EVAL_DATA_ROOT", str(REPO_ROOT)))
 REAL_GOLD = DATA_ROOT / "data" / "eval" / "answer_golden_v1.json"
 REAL_TRACES = DATA_ROOT / "tests" / "fixtures" / "answer_eval" / "traces.jsonl"
 REAL_ASSESSMENTS = DATA_ROOT / "tests" / "fixtures" / "answer_eval" / "assessments.jsonl"
