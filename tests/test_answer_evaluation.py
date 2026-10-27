@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -23,7 +24,7 @@ from finrag.answer_evaluation import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DATA_ROOT = REPO_ROOT.parents[1] / "FinRAG-eval-data"
+DATA_ROOT = Path(os.environ.get("FINRAG_EVAL_DATA_ROOT", str(REPO_ROOT.parent / "FinRAG-eval-data")))
 REAL_GOLD = DATA_ROOT / "data" / "eval" / "answer_golden_v1.json"
 REAL_TRACES = DATA_ROOT / "tests" / "fixtures" / "answer_eval" / "traces.jsonl"
 REAL_ASSESSMENTS = DATA_ROOT / "tests" / "fixtures" / "answer_eval" / "assessments.jsonl"
@@ -282,6 +283,13 @@ def test_real_data_primary_stages():
         # diagnostic
         assert case["coverage_complete_but_context_insufficient"] == ec["assertions"]["coverage_complete_but_context_insufficient"]
     assert mismatches == 0
+    # Exact secondary-label comparison.
+    secondary_mismatches = 0
+    for ec in expected["cases"]:
+        case = cases[ec["question_id"]]
+        if set(case["secondary_labels"]) != set(ec["secondary_contains"]):
+            secondary_mismatches += 1
+    assert secondary_mismatches == 0
     assert report["aggregates"]["integrity_failures"]["numerator"] == 0
 
 
@@ -310,6 +318,15 @@ def test_real_data_metric_internal_consistency():
     backend_cases = [c for c in report["cases"] if c["trace_status"] == "backend_error"]
     assert len(backend_cases) == 1
     assert backend_cases[0]["observed_decision"] is None
+    # decision metrics are structural and explicitly exclude backend/non-decisions
+    observed_decisions = [c for c in report["cases"] if c["observed_decision"] in {"answered", "abstained"}]
+    assert agg["decision_accuracy"]["denominator"] == len(observed_decisions)
+    expected_answer_observed = [c for c in report["cases"] if c["expected_decision"] == "answer" and c["observed_decision"] in {"answered", "abstained"}]
+    assert agg["false_abstention"]["denominator"] == len(expected_answer_observed)
+    expected_abstain_observed = [c for c in report["cases"] if c["expected_decision"] == "abstain" and c["observed_decision"] in {"answered", "abstained"}]
+    assert agg["false_answer"]["denominator"] == len(expected_abstain_observed)
+    assert agg["assessment_coverage"]["numerator"] == 14
+    assert agg["assessment_coverage"]["denominator"] == 16
 
 
 @pytest.mark.skipif(not REAL_GOLD.exists(), reason="canonical data worktree unavailable")
@@ -347,3 +364,124 @@ def test_cli_real_data(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert (out / "report.json").exists()
+
+def test_incorrect_evidence_text_hash():
+    tr = canonical_trace()
+    tr["evidence"][0]["text_sha256"] = sha256_text("wrong")
+    with pytest.raises(EvaluationError):
+        parse_traces([tr])
+
+
+def test_stale_gold_sha256():
+    gold = parse_gold(canonical_gold())
+    trace = parse_traces([canonical_trace()])
+    assessments = parse_assessments([canonical_assessment()])
+    report = evaluate_answer_quality(gold, trace, assessments, gold_sha256="f" * 64)
+    case = report["cases"][0]
+    assert case["integrity"]["status"] == "failed"
+    assert any("gold_sha256 mismatch" in e for e in case["integrity"]["errors"])
+
+
+def test_retrieval_vs_context_attribution():
+    tr = canonical_trace(candidate_evidence=[{"document_id": "sample_report", "chunk_id": 0, "page_index": None}])
+    # candidate contains required evidence, but context evidence is empty
+    tr["evidence"] = []
+    tr["result"]["status"] = "no_evidence"
+    tr["result"]["raw_answer"] = "INSUFFICIENT_EVIDENCE"
+    pass
+    gold = parse_gold(canonical_gold())
+    trace = parse_traces([tr])
+    assessments = parse_assessments([canonical_assessment()]) if False else []
+    # unassessed is acceptable; attribution should be context_assembly
+    report = evaluate_answer_quality(gold, trace, [])
+    case = report["cases"][0]
+    assert case["evidence"]["candidate_evidence"] == "available"
+    assert case["failure_stage"] == "context_assembly"
+
+
+def test_malformed_and_out_of_range_qwen_citations():
+    gold = parse_gold(canonical_gold())
+    for raw in ["Revenue €420 million [", "Revenue €420 million [9]"]:
+        tr = canonical_trace(raw_answer=raw)
+        trace = parse_traces([tr])
+        asm = canonical_assessment()
+        asm["claims"] = []
+        asm["citations"] = []
+        assessments = parse_assessments([asm])
+        report = evaluate_answer_quality(gold, trace, assessments)
+        case = report["cases"][0]
+        assert case["citations"]["structural_validity"] == "invalid"
+        assert case["failure_stage"] == "citation"
+
+
+def test_unassessed_claims():
+    asm = canonical_assessment()
+    asm["claims"] = [
+        {"claim_id": "A1", "text": "Revenue was €420 million in 2025", "support": "unassessed"}
+    ]
+    gold = parse_gold(canonical_gold())
+    trace = parse_traces([canonical_trace()])
+    assessments = parse_assessments([asm])
+    report = evaluate_answer_quality(gold, trace, assessments)
+    case = report["cases"][0]
+    assert case["claims"]["unassessed_count"] == 1
+    assert case["outcome"] != "success"
+
+
+def test_invalid_cross_entity_references():
+    gold = parse_gold(canonical_gold())
+    tr = canonical_trace()
+    tr["question_id"] = "missing-question"
+    trace = parse_traces([tr])
+    with pytest.raises(EvaluationError):
+        evaluate_answer_quality(gold, trace, [])
+    asm = canonical_assessment()
+    asm["trace_id"] = "missing-trace"
+    asm["question_id"] = "q1"
+    assessments = parse_assessments([asm])
+    with pytest.raises(EvaluationError):
+        evaluate_answer_quality(gold, parse_traces([canonical_trace()]), assessments)
+
+
+def test_extractive_answer_without_qwen_citations():
+    tr = canonical_trace()
+    tr["config"]["generator"] = "extractive"
+    tr["result"]["raw_answer"] = "Northstar reported revenue of €420 million in 2025."
+    pass
+    tr["evidence"][0]["citation_id"] = 1
+    gold = parse_gold(canonical_gold())
+    trace = parse_traces([tr])
+    asm = canonical_assessment()
+    asm["citations"] = []
+    asm["claims"] = [
+        {"claim_id": "A1", "text": "Northstar reported revenue of €420 million in 2025", "support": "supported"}
+    ]
+    assessments = parse_assessments([asm])
+    report = evaluate_answer_quality(gold, trace, assessments)
+    case = report["cases"][0]
+    assert case["citations"]["requirement"] == "not_applicable"
+    assert case["outcome"] == "success"
+
+
+def test_incorrect_corpus_source_hash(tmp_path):
+    root = tmp_path / "repo"
+    (root / "data" / "raw").mkdir(parents=True)
+    (root / "data" / "raw" / "sample_report.txt").write_text("Northstar reported revenue of €420 million in 2025.", encoding="utf-8")
+    gold_data = canonical_gold()
+    gold_data["corpus"][0]["sha256"] = "f" * 64
+    gold_path = root / "gold.json"
+    gold_path.write_text(json.dumps(gold_data), encoding="utf-8")
+    import os
+    old_cwd = os.getcwd()
+    os.chdir(root)
+    try:
+        with pytest.raises(EvaluationError):
+            load_gold(gold_path)
+    finally:
+        os.chdir(old_cwd)
+
+
+def test_byte_identical_serialization_canonical():
+    report1 = run_canonical()
+    report2 = run_canonical()
+    assert render_report(report1) == render_report(report2)

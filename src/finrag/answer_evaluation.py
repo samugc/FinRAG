@@ -291,6 +291,86 @@ def _text_present(needle: str, haystack: str) -> bool:
     return needle_norm in haystack_norm or needle_norm in haystack.casefold()
 
 
+def _has_number(text: str) -> bool:
+    return any(char.isdigit() for char in text) or any(
+        symbol in text for symbol in ("€", "$", "£", "%")
+    )
+
+
+def _secondary_labels(
+    *,
+    gold,
+    trace,
+    assessment,
+    observed,
+    missing_required_ids,
+    candidate_available,
+    candidate_missing_ids,
+    context_label,
+    claim_unsupported,
+    claim_contradicted,
+    claim_items,
+    structural_validity,
+    syntax_errors,
+    citation_does_not_support_ids,
+    citation_irrelevant_ids,
+    false_abstention,
+    false_answer,
+    integrity_failed,
+) -> list[str]:
+    labels: set[str] = set()
+    if assessment is not None:
+        labels.update(assessment.secondary_labels)
+
+    if integrity_failed:
+        pass
+
+    if trace is not None and trace.status == "backend_error":
+        labels.add("backend_error")
+
+    if missing_required_ids:
+        labels.add("missing_required_evidence")
+        if candidate_available and candidate_missing_ids:
+            labels.add("candidate_evidence_absent")
+        if candidate_available and not candidate_missing_ids:
+            labels.add("candidate_present_not_in_context")
+
+    if assessment is not None and false_abstention:
+        labels.add("incorrect_abstention")
+    if assessment is not None and false_answer:
+        labels.add("false_answer")
+
+    if assessment is None and not (trace is not None and trace.status == "backend_error"):
+        labels.add("unassessed_label")
+
+    if structural_validity == "invalid":
+        labels.add("invalid_citation_syntax")
+        if "malformed_brackets" in syntax_errors or "unsupported_syntax" in syntax_errors:
+            labels.add("malformed_citation")
+        if "missing_citations" in syntax_errors:
+            labels.add("missing_citation")
+        if "out_of_range" in syntax_errors:
+            labels.add("out_of_range_citation")
+
+    if citation_does_not_support_ids or citation_irrelevant_ids:
+        labels.add("citation_not_supported")
+    if citation_irrelevant_ids:
+        labels.add("irrelevant_citation")
+
+    if claim_unsupported > 0:
+        labels.add("unsupported_claim")
+        for item in claim_items:
+            if item.get("support") == "unsupported" and _has_number(item.get("text", "")):
+                labels.add("unsupported_numeric")
+    if claim_contradicted > 0:
+        labels.add("contradicted_claim")
+        for item in claim_items:
+            if item.get("support") == "contradicted" and _has_number(item.get("text", "")):
+                labels.add("contradicted_numeric")
+
+    return sorted(labels)
+
+
 def _resolve_repo_root(start: Path) -> Path:
     current = start.resolve()
     if current.is_file():
@@ -1484,7 +1564,26 @@ def _evaluate_case(
             "support": metric(citation_supported, citation_reviewed) if citation_reviewed or (generated and assessment is not None and structural_validity == "valid") else metric(0, 0),
             "citation_pairs": citation_pairs,
         },
-        "secondary_labels": list(assessment.secondary_labels) if assessment is not None else [],
+        "secondary_labels": _secondary_labels(
+        gold=gold,
+        trace=trace,
+        assessment=assessment,
+        observed=observed,
+        missing_required_ids=missing_required_ids,
+        candidate_available=candidate_available,
+        candidate_missing_ids=candidate_missing_ids,
+        context_label=context_label,
+        claim_unsupported=claim_unsupported,
+        claim_contradicted=claim_contradicted,
+        claim_items=claim_items,
+        structural_validity=structural_validity,
+        syntax_errors=syntax_errors,
+        citation_does_not_support_ids=citation_does_not_support_ids,
+        citation_irrelevant_ids=citation_irrelevant_ids,
+        false_abstention=false_abstention,
+        false_answer=false_answer,
+        integrity_failed=integrity_failed,
+    ),
         "coverage_complete_but_context_insufficient": coverage_complete_but_context_insufficient,
         "abstention_error": abstention_error,
     }
