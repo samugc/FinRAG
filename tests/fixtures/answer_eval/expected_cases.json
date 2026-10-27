@@ -1,0 +1,494 @@
+{
+  "schema_version": "finrag.answer_expected_cases.v1",
+  "dataset_id": "finrag-answer-synthetic-v1",
+  "fixture_run_id": "fixture-answer-eval-v1",
+  "gold_sha256": "b1640875d4333adcf0cfe386a823faf370bb3dc663de505ca6a531acfa7c2cb2",
+  "traces_file": "traces.jsonl",
+  "assessments_file": "assessments.jsonl",
+  "notes": "Per-case fixture oracle only. These are not aggregate measured performance values.",
+  "cases": [
+    {
+      "question_id": "syn-revenue-2025",
+      "assessment_present": true,
+      "expected_primary": null,
+      "secondary_contains": [],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "correct",
+        "claims": {
+          "reviewed": 1,
+          "supported": 1,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "valid",
+        "citation_pairs": {
+          "reviewed": 1,
+          "supported": 1
+        },
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-operating-profit-2025",
+      "assessment_present": true,
+      "expected_primary": "unknown",
+      "secondary_contains": [
+        "missing_required_evidence",
+        "incorrect_abstention"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 0,
+          "required": 1
+        },
+        "context_sufficient": "insufficient",
+        "decision": "abstained",
+        "answer_correct": "not_applicable",
+        "claims": {
+          "reviewed": 0,
+          "supported": 0,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "not_applicable",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "false_abstention",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-net-debt-2025",
+      "assessment_present": true,
+      "expected_primary": "context_assembly",
+      "secondary_contains": [
+        "missing_required_evidence",
+        "candidate_present_not_in_context",
+        "incorrect_abstention"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 0,
+          "required": 1
+        },
+        "context_sufficient": "insufficient",
+        "decision": "abstained",
+        "answer_correct": "not_applicable",
+        "claims": {
+          "reviewed": 0,
+          "supported": 0,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "not_applicable",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "false_abstention",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-headcount-2025",
+      "assessment_present": true,
+      "expected_primary": "retrieval",
+      "secondary_contains": [
+        "missing_required_evidence",
+        "candidate_evidence_absent",
+        "incorrect_abstention"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 0,
+          "required": 1
+        },
+        "context_sufficient": "insufficient",
+        "decision": "abstained",
+        "answer_correct": "not_applicable",
+        "claims": {
+          "reviewed": 0,
+          "supported": 0,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "not_applicable",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "false_abstention",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-ocf-2025",
+      "assessment_present": true,
+      "expected_primary": "generation",
+      "secondary_contains": [
+        "contradicted_claim",
+        "citation_not_supported",
+        "contradicted_numeric"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "incorrect",
+        "claims": {
+          "reviewed": 1,
+          "supported": 0,
+          "unsupported": 0,
+          "contradicted": 1,
+          "unassessed": 0
+        },
+        "citation_syntax": "valid",
+        "citation_pairs": {
+          "reviewed": 1,
+          "supported": 0
+        },
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-fcf-2025",
+      "assessment_present": true,
+      "expected_primary": "generation",
+      "secondary_contains": [
+        "unsupported_claim",
+        "citation_not_supported",
+        "unsupported_numeric"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "incorrect",
+        "claims": {
+          "reviewed": 2,
+          "supported": 1,
+          "unsupported": 1,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "valid",
+        "citation_pairs": {
+          "reviewed": 2,
+          "supported": 1
+        },
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-cash-2025",
+      "assessment_present": true,
+      "expected_primary": "citation",
+      "secondary_contains": [
+        "invalid_citation_syntax",
+        "malformed_citation"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "correct",
+        "claims": {
+          "reviewed": 1,
+          "supported": 1,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "invalid",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-customer-concentration",
+      "assessment_present": true,
+      "expected_primary": "citation",
+      "secondary_contains": [
+        "citation_not_supported",
+        "irrelevant_citation"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "correct",
+        "claims": {
+          "reviewed": 1,
+          "supported": 1,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "valid",
+        "citation_pairs": {
+          "reviewed": 1,
+          "supported": 0
+        },
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-fx-exposure",
+      "assessment_present": true,
+      "expected_primary": "citation",
+      "secondary_contains": [
+        "invalid_citation_syntax",
+        "out_of_range_citation"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "correct",
+        "claims": {
+          "reviewed": 1,
+          "supported": 1,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "invalid",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-workforce-expansion-2026",
+      "assessment_present": true,
+      "expected_primary": "citation",
+      "secondary_contains": [
+        "invalid_citation_syntax",
+        "missing_citation"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "correct",
+        "claims": {
+          "reviewed": 1,
+          "supported": 1,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "invalid",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-revenue-growth-2026",
+      "assessment_present": true,
+      "expected_primary": "unknown",
+      "secondary_contains": [
+        "incorrect_abstention"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "insufficient",
+        "decision": "abstained",
+        "answer_correct": "not_applicable",
+        "claims": {
+          "reviewed": 0,
+          "supported": 0,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "not_applicable",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "false_abstention",
+        "coverage_complete_but_context_insufficient": true
+      }
+    },
+    {
+      "question_id": "syn-no-exact-2026-forecast",
+      "assessment_present": true,
+      "expected_primary": "generation",
+      "secondary_contains": [
+        "contradicted_claim",
+        "citation_not_supported",
+        "contradicted_numeric"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "assessed",
+          "matched": 1,
+          "required": 1
+        },
+        "context_sufficient": "sufficient",
+        "decision": "answered",
+        "answer_correct": "incorrect",
+        "claims": {
+          "reviewed": 1,
+          "supported": 0,
+          "unsupported": 0,
+          "contradicted": 1,
+          "unassessed": 0
+        },
+        "citation_syntax": "valid",
+        "citation_pairs": {
+          "reviewed": 1,
+          "supported": 0
+        },
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-unans-dividend",
+      "assessment_present": true,
+      "expected_primary": null,
+      "secondary_contains": [],
+      "assertions": {
+        "required_evidence": {
+          "status": "not_applicable",
+          "matched": null,
+          "required": 0
+        },
+        "context_sufficient": "not_applicable",
+        "decision": "abstained",
+        "answer_correct": "not_applicable",
+        "claims": {
+          "reviewed": 0,
+          "supported": 0,
+          "unsupported": 0,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "not_applicable",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "none",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-unans-ceo",
+      "assessment_present": true,
+      "expected_primary": "generation",
+      "secondary_contains": [
+        "false_answer",
+        "unsupported_claim",
+        "citation_not_supported"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "not_applicable",
+          "matched": null,
+          "required": 0
+        },
+        "context_sufficient": "not_applicable",
+        "decision": "answered",
+        "answer_correct": "incorrect",
+        "claims": {
+          "reviewed": 1,
+          "supported": 0,
+          "unsupported": 1,
+          "contradicted": 0,
+          "unassessed": 0
+        },
+        "citation_syntax": "valid",
+        "citation_pairs": {
+          "reviewed": 1,
+          "supported": 0
+        },
+        "abstention_error": "false_answer",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-unans-tax-rate",
+      "assessment_present": false,
+      "expected_primary": "backend",
+      "secondary_contains": [
+        "backend_error"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "not_applicable",
+          "matched": null,
+          "required": 0
+        },
+        "context_sufficient": null,
+        "decision": null,
+        "answer_correct": null,
+        "claims": null,
+        "citation_syntax": "not_applicable",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "not_assessed",
+        "coverage_complete_but_context_insufficient": false
+      }
+    },
+    {
+      "question_id": "syn-unans-offices",
+      "assessment_present": false,
+      "expected_primary": "unknown",
+      "secondary_contains": [
+        "unassessed_label"
+      ],
+      "assertions": {
+        "required_evidence": {
+          "status": "not_applicable",
+          "matched": null,
+          "required": 0
+        },
+        "context_sufficient": null,
+        "decision": null,
+        "answer_correct": null,
+        "claims": null,
+        "citation_syntax": "valid",
+        "citation_pairs": "not_applicable",
+        "abstention_error": "not_assessed",
+        "coverage_complete_but_context_insufficient": false
+      }
+    }
+  ]
+}

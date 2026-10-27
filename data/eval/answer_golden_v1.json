@@ -1,0 +1,404 @@
+{
+  "schema_version": "finrag.answer_gold.v1",
+  "dataset_id": "finrag-answer-synthetic-v1",
+  "corpus": [
+    {
+      "document_id": "sample_report",
+      "source": "data/raw/sample_report.txt",
+      "sha256": "059082ed39658209264c0e34361374e4cf1bfbc98bc4707906fbc1e7f1ec9f2c",
+      "provenance": "synthetic"
+    },
+    {
+      "document_id": "cash_flow",
+      "source": "data/raw/cash_flow.txt",
+      "sha256": "957ce545bc6caedc8fc3378e9c5ca7e75d659dbcc601096d9925ee2e70b610f2",
+      "provenance": "synthetic"
+    },
+    {
+      "document_id": "risk_report",
+      "source": "data/raw/risk_report.txt",
+      "sha256": "8534c5f440eafcd8a635cd58d337dd9ae78e75cc239d6cf7a25d2eb1f5fe992c",
+      "provenance": "synthetic"
+    },
+    {
+      "document_id": "outlook",
+      "source": "data/raw/outlook.txt",
+      "sha256": "66bbf37995fab03579849cf95e1fd7b65a7321dd96951a979324912e4631a722",
+      "provenance": "synthetic"
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "syn-revenue-2025",
+      "question": "What was Northstar's revenue in 2025?",
+      "document_id": "sample_report",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "€420 million in 2025",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "sample_report",
+          "chunk_id": 0,
+          "page_index": null,
+          "quote": "Northstar reported revenue of €420 million in 2025",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-operating-profit-2025",
+      "question": "What was Northstar's operating profit?",
+      "document_id": "sample_report",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "€58 million",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "sample_report",
+          "chunk_id": 0,
+          "page_index": null,
+          "quote": "Operating profit increased to €58 million",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-net-debt-2025",
+      "question": "What was Northstar's net debt at the end of the year?",
+      "document_id": "sample_report",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "€110 million",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "sample_report",
+          "chunk_id": 1,
+          "page_index": null,
+          "quote": "Net debt at the end of the year was €110 million",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-headcount-2025",
+      "question": "What was Northstar's approximate headcount?",
+      "document_id": "sample_report",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "approximately 3,200 people",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "sample_report",
+          "chunk_id": 2,
+          "page_index": null,
+          "quote": "Northstar employed approximately 3,200 people across Europe and North America",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-ocf-2025",
+      "question": "How much operating cash flow did Northstar generate in 2025?",
+      "document_id": "cash_flow",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "€74 million",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "cash_flow",
+          "chunk_id": 0,
+          "page_index": null,
+          "quote": "Northstar generated €74 million in operating cash flow during 2025",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-fcf-2025",
+      "question": "How much cash remained after investment spending?",
+      "document_id": "cash_flow",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "€53 million",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "cash_flow",
+          "chunk_id": 1,
+          "page_index": null,
+          "quote": "After capital expenditure, free cash flow was €53 million",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-cash-2025",
+      "question": "How much cash and cash equivalents did the company hold at year end?",
+      "document_id": "cash_flow",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "€36 million",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "cash_flow",
+          "chunk_id": 2,
+          "page_index": null,
+          "quote": "The company ended the year with €36 million in cash and cash equivalents",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-customer-concentration",
+      "question": "What risk comes from relying on a few large customers?",
+      "document_id": "risk_report",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "Customer concentration risk from a small number of large enterprise customers.",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "risk_report",
+          "chunk_id": 1,
+          "page_index": null,
+          "quote": "small number of large enterprise customers for a meaningful share of annual revenue",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-fx-exposure",
+      "question": "Which currencies create exchange-rate exposure?",
+      "document_id": "risk_report",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "US dollars and British pounds",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "risk_report",
+          "chunk_id": 2,
+          "page_index": null,
+          "quote": "Foreign exchange exposure mainly comes from contracts denominated in US dollars and British pounds",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-workforce-expansion-2026",
+      "question": "Is the company planning to expand its workforce?",
+      "document_id": "outlook",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "Yes; plans to hire additional software engineers and sales staff.",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "outlook",
+          "chunk_id": 1,
+          "page_index": null,
+          "quote": "The company plans to hire additional software engineers and sales staff during the year",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-revenue-growth-2026",
+      "question": "What does management expect for revenue growth in 2026?",
+      "document_id": "outlook",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "Management expects revenue growth to remain positive in 2026.",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "outlook",
+          "chunk_id": 0,
+          "page_index": null,
+          "quote": "revenue growth to remain positive in 2026",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": "Fixture 11 intentionally simulates a context snapshot that contains the required phrase but omits the subject attribution; the assessment therefore marks semantic context insufficient despite full quote coverage."
+    },
+    {
+      "question_id": "syn-no-exact-2026-forecast",
+      "question": "Does management provide an exact sales forecast for 2026?",
+      "document_id": "outlook",
+      "answerability": "answerable",
+      "expected_decision": "answer",
+      "expected_answer": {
+        "status": "reviewed",
+        "text": "No specific revenue target was provided for 2026.",
+        "evidence_ids": [
+          "E1"
+        ]
+      },
+      "required_evidence": [
+        {
+          "evidence_id": "E1",
+          "document_id": "outlook",
+          "chunk_id": 2,
+          "page_index": null,
+          "quote": "No specific revenue target was provided for 2026",
+          "review_status": "reviewed"
+        }
+      ],
+      "review_status": "reviewed",
+      "notes": null
+    },
+    {
+      "question_id": "syn-unans-dividend",
+      "question": "What dividend per share did the company distribute?",
+      "document_id": "sample_report",
+      "answerability": "unanswerable",
+      "expected_decision": "abstain",
+      "expected_answer": {
+        "status": "not_applicable",
+        "text": null,
+        "evidence_ids": []
+      },
+      "required_evidence": [],
+      "review_status": "reviewed",
+      "notes": "Absence is scoped to the supplied synthetic source document."
+    },
+    {
+      "question_id": "syn-unans-ceo",
+      "question": "Who is Northstar's chief executive officer?",
+      "document_id": "sample_report",
+      "answerability": "unanswerable",
+      "expected_decision": "abstain",
+      "expected_answer": {
+        "status": "not_applicable",
+        "text": null,
+        "evidence_ids": []
+      },
+      "required_evidence": [],
+      "review_status": "reviewed",
+      "notes": "Absence is scoped to the supplied synthetic source document."
+    },
+    {
+      "question_id": "syn-unans-tax-rate",
+      "question": "What was the company's tax rate in 2025?",
+      "document_id": "cash_flow",
+      "answerability": "unanswerable",
+      "expected_decision": "abstain",
+      "expected_answer": {
+        "status": "not_applicable",
+        "text": null,
+        "evidence_ids": []
+      },
+      "required_evidence": [],
+      "review_status": "reviewed",
+      "notes": "Absence is scoped to the supplied synthetic source document."
+    },
+    {
+      "question_id": "syn-unans-offices",
+      "question": "How many offices does Northstar own?",
+      "document_id": "sample_report",
+      "answerability": "unanswerable",
+      "expected_decision": "abstain",
+      "expected_answer": {
+        "status": "not_applicable",
+        "text": null,
+        "evidence_ids": []
+      },
+      "required_evidence": [],
+      "review_status": "reviewed",
+      "notes": "Absence is scoped to the supplied synthetic source document."
+    }
+  ]
+}
