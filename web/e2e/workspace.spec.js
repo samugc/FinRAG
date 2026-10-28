@@ -152,6 +152,10 @@ test("disables requests when the local service is offline", async ({ page }) => 
   await page.route("**/api/documents", (route) => route.fulfill({ status: 503, json: { detail: "Corpus unavailable" } }));
   await page.goto("/");
   await expect(page.getByText("API offline")).toBeVisible();
+  await expect(page.getByText("Start the local API")).toBeVisible();
+  await expect(
+    page.getByText("PYTHONPATH=src python -m uvicorn finrag.api:app --host 127.0.0.1 --port 8000")
+  ).toBeVisible();
   await page.getByLabel("Ask a financial question").fill("Revenue?");
   await expect(page.getByRole("button", { name: "Send question" })).toBeDisabled();
 });

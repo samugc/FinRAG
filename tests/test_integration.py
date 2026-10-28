@@ -5,7 +5,12 @@ from fastapi.testclient import TestClient
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
-from finrag.api import BACKEND_ERROR_MESSAGE, create_app
+from finrag.api import (
+    BACKEND_ERROR_MESSAGE,
+    BACKEND_RESPONSE_ERROR_MESSAGE,
+    backend_error_message,
+    create_app,
+)
 from finrag.generation import AnswerStatus, GenerationResult
 from finrag.pipeline import FinRAGPipeline
 
@@ -51,13 +56,31 @@ def test_api_preserves_generation_states(tmp_path, status):
     assert data['answer'] == 'raw [1]'
     assert data['sufficient_evidence'] == (status is AnswerStatus.PRODUCED)
     assert data['calculation'] is None
-    expected_error = BACKEND_ERROR_MESSAGE if status is AnswerStatus.BACKEND_ERROR else None
+    expected_error = (
+        BACKEND_RESPONSE_ERROR_MESSAGE
+        if status is AnswerStatus.BACKEND_ERROR
+        else None
+    )
     assert data['error'] == expected_error
     if status is AnswerStatus.BACKEND_ERROR:
-        assert 'Ollama' in data['error']
+        assert 'unavailable' not in data['error']
         assert data['reason'] == 'reason'
     assert data['evidence'][0]['page_number'] is None
     assert data['evidence'][0]['citation_id'] == 1
+
+
+@pytest.mark.parametrize('reason,expected', [
+    ('URLError', BACKEND_ERROR_MESSAGE),
+    ('TimeoutError', BACKEND_ERROR_MESSAGE),
+    ('HTTPError', BACKEND_ERROR_MESSAGE),
+    ('JSONDecodeError', BACKEND_RESPONSE_ERROR_MESSAGE),
+    ('KeyError', BACKEND_RESPONSE_ERROR_MESSAGE),
+    ('TypeError', BACKEND_RESPONSE_ERROR_MESSAGE),
+])
+def test_backend_error_guidance_matches_failure_kind(reason, expected):
+    assert backend_error_message(reason) == expected
+    if expected is BACKEND_RESPONSE_ERROR_MESSAGE:
+        assert 'unavailable' not in expected
 
 
 def test_pdf_pages_multiquery_and_temporal_context(tmp_path):

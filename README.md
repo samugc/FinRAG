@@ -162,6 +162,8 @@ npm ci
 cd ..
 ```
 
+The frontend requires Node.js `^20.19.0 || >=22.12.0`, matching the installed Vite release.
+
 Install [Ollama](https://ollama.com/) separately, start its local service, and fetch the intended model:
 
 ```bash
@@ -187,6 +189,12 @@ npm run dev
 Open `http://127.0.0.1:5183/` and use a single local PDF for Multi-Query mode. The Vite proxy forwards `/api` to the loopback FastAPI server. See [`docs/api.md`](docs/api.md) for the API contract. Model/download dependencies require an initial network connection.
 
 ### Tests and quality checks
+
+Install Playwright's Chromium build once before running the browser suite:
+
+```bash
+cd web && npx playwright install chromium
+```
 
 The integrated tree passed these local checks on 20 October 2026; the Python and web GitHub Actions workflows also passed before the integration PR was merged:
 

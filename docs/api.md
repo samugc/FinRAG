@@ -43,8 +43,10 @@ P0 states are `produced`, `model_abstention`, `invalid_output`, `no_evidence`,
 `backend_error`, plus pipeline `insufficient_context`. A backend generation error
 is a 200 response with that state and the retrieved evidence; malformed requests
 return 422 and unavailable corpus/retrieval services return 503. For
-`backend_error`, `error` is a user-facing Ollama setup hint while `reason`
-retains the diagnostic exception type. The legacy `sufficient_evidence` boolean
+`backend_error`, `error` is a user-facing recovery hint while `reason` retains
+the diagnostic exception type. Transport failures receive Ollama startup
+guidance; malformed or unreadable backend responses receive a generic retry
+message instead. The legacy `sufficient_evidence` boolean
 means produced/structurally accepted, not factual correctness. Extractive
 production means the score cutoff passed.
 

@@ -9,6 +9,12 @@
 
 .citation-link { color: #2563eb; background: transparent; border: 0; cursor: pointer; padding: 0 2px; }
 .citation-link:disabled { color: #b91c1c; cursor: default; }
+
+.offline-setup{display:flex;gap:10px;align-items:flex-start;background:#fff8ef;border:1px solid #efdfc8;border-radius:9px;padding:12px;color:#8a6a3d;font-size:12px;line-height:1.6;margin-bottom:10px}
+.offline-setup svg{flex-shrink:0;margin-top:2px}
+.offline-setup b{display:block;color:#71542c;font-size:12px;margin-bottom:3px}
+.offline-setup span{display:block}
+.offline-setup code{display:block;margin:7px 0;padding:8px 10px;background:#fff;border:1px solid #efe2cf;border-radius:6px;color:#60492a;font-size:11px;overflow-wrap:anywhere}
 .period-warning { font-size: 12px; color: #6b7280; }
 
 

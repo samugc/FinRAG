@@ -285,6 +285,15 @@ export default function App() {
           {body}
         </div>
         <div className="composer-area">
+          {!online && !loadingSetup && <div className="offline-setup" role="status">
+            <CircleAlert size={15}/>
+            <div>
+              <b>Start the local API</b>
+              <span>From the repository root in a second terminal:</span>
+              <code>PYTHONPATH=src python -m uvicorn finrag.api:app --host 127.0.0.1 --port 8000</code>
+              <span>Then select the offline status above to retry.</span>
+            </div>
+          </div>}
           {!!error && <div className="global-error"><CircleAlert size={15}/>{error}<button aria-label="Dismiss error" onClick={() => setError("")}><X size={15}/></button></div>}
           <form className="composer" onSubmit={(e) => { e.preventDefault(); ask(); }}>
             <textarea aria-label="Ask a financial question" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } }} placeholder="Ask anything about your financial documents..." rows={2}/>

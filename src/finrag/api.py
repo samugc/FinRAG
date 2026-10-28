@@ -19,12 +19,30 @@ from finrag.pipeline import FinRAGPipeline
 MAX_PDF_BYTES = 25 * 1024 * 1024
 MAX_PDF_PAGES = 500
 
-# User-facing recovery hint. ``reason`` keeps the diagnostic exception type.
+# User-facing recovery hints. ``reason`` keeps the diagnostic exception type.
+# Ollama guidance applies only to transport/connection failures and HTTP errors
+# from the Ollama endpoint (for example, a missing model). Unreadable payloads
+# are a different failure and must not be described as an unavailable server.
+OLLAMA_UNAVAILABLE_REASONS = frozenset({
+    "ConnectionError", "HTTPError", "OSError", "TimeoutError", "URLError",
+})
 BACKEND_ERROR_MESSAGE = (
     "Local generation backend unavailable. Confirm Ollama is running at "
     "127.0.0.1:11434 and that qwen3:4b-instruct is installed "
     "(`ollama pull qwen3:4b-instruct`), then retry."
 )
+BACKEND_RESPONSE_ERROR_MESSAGE = (
+    "The local model returned an unreadable response. Check the generation "
+    "backend logs, then retry."
+)
+
+
+def backend_error_message(reason: str | None) -> str:
+    """Return recovery guidance while preserving ``reason`` as the diagnostic."""
+
+    if reason in OLLAMA_UNAVAILABLE_REASONS:
+        return BACKEND_ERROR_MESSAGE
+    return BACKEND_RESPONSE_ERROR_MESSAGE
 
 
 class QueryRequest(BaseModel):
@@ -270,7 +288,11 @@ def create_app(
 
         return QueryResponse(
             status=result.status, reason=result.reason,
-            error=BACKEND_ERROR_MESSAGE if result.status is AnswerStatus.BACKEND_ERROR else None,
+            error=(
+                backend_error_message(result.reason)
+                if result.status is AnswerStatus.BACKEND_ERROR
+                else None
+            ),
             retrieval_mode=result.retrieval_mode, period_check=result.period_check,
             timings=result.timings, calculation=result.calculation,
             question=result.question,
