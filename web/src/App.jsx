@@ -210,7 +210,7 @@ export default function App() {
                     disabled={!entry.data.evidence.some((hit, j) => (hit.citation_id || j + 1) === id)}
                     onClick={() => inspect(entry, id)}>[{id}]</button>)}</span>
                 ) : <span key={i}>{part.text}</span>)}</div>
-                {entry.data.reason && <p className="period-warning">{entry.data.reason}</p>}
+                {entry.data.reason && entry.data.status !== "backend_error" && <p className="period-warning">{entry.data.reason}</p>}
                 {entry.data.error && <div role="alert">{entry.data.error}</div>}
                 {entry.data.period_check?.warnings?.map(warning => <p className="period-warning" key={warning}>{warning}</p>)}
                 <div className="answer-footer">

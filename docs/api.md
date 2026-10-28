@@ -42,9 +42,11 @@ reserved and always null; P1 is not implemented.
 P0 states are `produced`, `model_abstention`, `invalid_output`, `no_evidence`,
 `backend_error`, plus pipeline `insufficient_context`. A backend generation error
 is a 200 response with that state and the retrieved evidence; malformed requests
-return 422 and unavailable corpus/retrieval services return 503. The legacy
-`sufficient_evidence` boolean means produced/structurally accepted, not factual
-correctness. Extractive production means the score cutoff passed.
+return 422 and unavailable corpus/retrieval services return 503. For
+`backend_error`, `error` is a user-facing Ollama setup hint while `reason`
+retains the diagnostic exception type. The legacy `sufficient_evidence` boolean
+means produced/structurally accepted, not factual correctness. Extractive
+production means the score cutoff passed.
 
 Period checks search complete pages of the selected evidence documents for
 explicit fiscal periods or supported English statement dates, not bare numeric

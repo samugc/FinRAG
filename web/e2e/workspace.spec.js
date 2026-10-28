@@ -111,6 +111,42 @@ test("shows backend errors instead of inventing answers", async ({ page }) => {
   await expect(page.locator(".answer-text")).toHaveCount(0);
 });
 
+test("backend error explains how to start Ollama", async ({ page }) => {
+  await fakeHealthyBackend(page, (route) =>
+    route.fulfill({
+      json: {
+        question: "Revenue?",
+        answer: "",
+        status: "backend_error",
+        reason: "URLError",
+        error:
+          "Local generation backend unavailable. Confirm Ollama is running at " +
+          "127.0.0.1:11434 and that qwen3:4b-instruct is installed " +
+          "(`ollama pull qwen3:4b-instruct`), then retry.",
+        sufficient_evidence: false,
+        retriever: "tfidf",
+        generator: "qwen",
+        source: null,
+        evidence: [{
+          source: "cash_flow.txt",
+          chunk_id: 0,
+          citation_id: 1,
+          text: "Northstar generated 58 million euros from operations in 2025.",
+          score: 0.87,
+        }],
+      },
+    })
+  );
+  await page.goto("/");
+  await expect(page.getByText("API connected")).toBeVisible();
+  await page.getByLabel("Ask a financial question").fill("Revenue?");
+  await page.getByRole("button", { name: "Send question" }).click();
+
+  await expect(page.getByText(/Confirm Ollama is running/)).toBeVisible();
+  await expect(page.getByText(/qwen3:4b-instruct/)).toBeVisible();
+  await expect(page.getByText("URLError", { exact: true })).toHaveCount(0);
+});
+
 test("disables requests when the local service is offline", async ({ page }) => {
   await page.route("**/api/health", (route) => route.fulfill({ status: 503, json: { status: "unavailable" } }));
   await page.route("**/api/documents", (route) => route.fulfill({ status: 503, json: { detail: "Corpus unavailable" } }));

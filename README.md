@@ -168,6 +168,8 @@ Install [Ollama](https://ollama.com/) separately, start its local service, and f
 ollama pull qwen3:4b-instruct
 ```
 
+If a Qwen query returns `backend_error`, confirm Ollama is listening on `127.0.0.1:11434` and that `qwen3:4b-instruct` appears in `ollama list`. The workspace response repeats this recovery step.
+
 Run backend and frontend in **separate terminals** from the repository root:
 
 ```bash

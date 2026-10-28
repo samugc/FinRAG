@@ -19,6 +19,13 @@ from finrag.pipeline import FinRAGPipeline
 MAX_PDF_BYTES = 25 * 1024 * 1024
 MAX_PDF_PAGES = 500
 
+# User-facing recovery hint. ``reason`` keeps the diagnostic exception type.
+BACKEND_ERROR_MESSAGE = (
+    "Local generation backend unavailable. Confirm Ollama is running at "
+    "127.0.0.1:11434 and that qwen3:4b-instruct is installed "
+    "(`ollama pull qwen3:4b-instruct`), then retry."
+)
+
 
 class QueryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -263,7 +270,7 @@ def create_app(
 
         return QueryResponse(
             status=result.status, reason=result.reason,
-            error=result.reason if result.status is AnswerStatus.BACKEND_ERROR else None,
+            error=BACKEND_ERROR_MESSAGE if result.status is AnswerStatus.BACKEND_ERROR else None,
             retrieval_mode=result.retrieval_mode, period_check=result.period_check,
             timings=result.timings, calculation=result.calculation,
             question=result.question,

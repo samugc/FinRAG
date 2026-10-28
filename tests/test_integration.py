@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
-from finrag.api import create_app
+from finrag.api import BACKEND_ERROR_MESSAGE, create_app
 from finrag.generation import AnswerStatus, GenerationResult
 from finrag.pipeline import FinRAGPipeline
 
@@ -51,7 +51,11 @@ def test_api_preserves_generation_states(tmp_path, status):
     assert data['answer'] == 'raw [1]'
     assert data['sufficient_evidence'] == (status is AnswerStatus.PRODUCED)
     assert data['calculation'] is None
-    assert data['error'] == ('reason' if status is AnswerStatus.BACKEND_ERROR else None)
+    expected_error = BACKEND_ERROR_MESSAGE if status is AnswerStatus.BACKEND_ERROR else None
+    assert data['error'] == expected_error
+    if status is AnswerStatus.BACKEND_ERROR:
+        assert 'Ollama' in data['error']
+        assert data['reason'] == 'reason'
     assert data['evidence'][0]['page_number'] is None
     assert data['evidence'][0]['citation_id'] == 1
 
