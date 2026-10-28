@@ -234,16 +234,20 @@ Multi-Query and additionally failed citation syntax under the span format.
 ## 8. Specific failure examples and causes
 
 - **Wrong entity / scope** — `10420` computed return on assets from parent-company Schedule I figures
-  rather than consolidated statements. Cause: retrieval returned a plausible but wrong-entity page;
-  the selector cannot distinguish parent and consolidated tables.
-- **Self-contradiction** — `00684` says the gross margin is improving and then reports a decline from
-  19.39% to 18.53%. Cause: generation composes an opening verdict before computing the comparison;
-  citation support does not check the verdict against the numbers.
+  rather than consolidated statements. Cause: retrieval ranked parent Schedule I statements above the
+  consolidated statements in both conditions (gold pages 129 and 131 were not retrieved), and chunk
+  selection has no entity or scope signal to reject them.
+- **Self-contradiction** — `00684` opens by asserting an improving gross margin and then reports a
+  decline from 19.39% to 18.53% in the same answer. Cause: the opening verdict is not reconciled with
+  the calculation that follows; in the adaptive trace the cited span also lacks the gross-profit
+  figures.
 - **False subclaim inside a supported answer** — `00956` reports J&J net earnings falling from
   $20,878M to $17,941M, then calls earnings growth positive. Cause: sentence-level assertion not
   reconciled with the cited income statement.
-- **Direction reversal** — `00566` reports a debt decrease as an increase and reverses the short-term
-  debt change. Cause: numeric comparison and sign handling in generation.
+- **Direction reversal** — `00566` fails in both conditions but differently. Multi-Query reports an
+  increase although long-term debt fell, while Adaptive + spans reports the long-term decrease but
+  says debt maturing within one year fell from $7,443M to $9,963M, which is an increase. Cause:
+  numeric comparison and sign handling in generation.
 - **Annotation/target mismatch** — `01028` lists countries while the benchmark answer expects four
   geographic segments. Cause: ambiguous question granularity plus model over-specification.
 - **Formatting-only loss** — `10420` under the span format wrote a nested prose bracket
@@ -251,8 +255,8 @@ Multi-Query and additionally failed citation syntax under the span format.
   though the arithmetic matched the Multi-Query answer. Cause: citation syntax imitation; not a
   retrieval regression.
 - **False abstention** — `00222` (development set) claimed inventories were not separated although the
-  selected page contained the inventory line. Cause: generation ignores available evidence; unchanged
-  by the candidate.
+  selected page contained the inventory line. Missing context therefore does not explain the
+  abstention; it was unchanged by the candidate.
 
 ## 9. Limitations
 
