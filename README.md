@@ -119,6 +119,19 @@ These results come from separate pilot and holdout research evaluations. They me
 
 The lower holdout scores are material. They show that evidence recovery is far from solved and that pilot improvements should not be presented as broad reliability claims. To describe these results as independently reproducible, publish the corresponding experiment settings, document manifest, evaluation commands, and permitted artifacts; downloaded reports need not be redistributed.
 
+### Adaptive budget experiment (not adopted)
+
+An experimental selector replaced Multi-Query's fixed two-chunks-per-page quota with a per-question
+evidence budget and one citation ID per contiguous evidence span. On a frozen 34-question,
+10-report holdout it increased structurally produced answers from 8/34 to 10/34, but annotated
+evidence presence fell from 7/46 to 3/46 spans, and the three gained answers had no annotated
+evidence span in their context. Provisional AI-assisted grading found incorrect and unsupported
+outputs under both configurations and no verified factual-accuracy improvement. The candidate was
+**not adopted**; its experimental code is **not merged** into `main`.
+
+See [docs/financebench_experiments.md](docs/financebench_experiments.md) for the paired protocol,
+exact structural metrics, semantic denominators, failure examples and limitations.
+
 ### Small synthetic regression corpus
 
 The project also includes a controlled synthetic example with **4 documents, 12 chunks, and 12 answerable questions** (plus 6 unanswerable questions used to study score overlap). It is useful for verifying retrieval code, **not** for benchmarking real financial QA.
